@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Minimalist Precision Tuning Fork -->
+    <!-- Prongs & Base -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M44,30 L44,52 C44,60 64,60 64,52 L64,30" />
+        
+    <!-- Stem and Base Node -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,58 L54,76" />
+        
+    <!-- Handle Base Ring -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,79 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+
+    <!-- Left Acoustic Resonance Wave -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B3FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M35,36 C32,41 32,47 35,52" />
+        
+    <!-- Right Acoustic Resonance Wave -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B3FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M73,36 C76,41 76,47 73,52" />
+
+    <!-- Harmonic Center Point Node -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,42 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />
+</vector>
