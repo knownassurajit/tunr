@@ -210,7 +210,7 @@ fun TunerHUD(
             isInTune = isInTune,
             thresholdCents = tuningMode.inTuneThresholdCents,
             modifier = Modifier
-                .fillMaxWidth(0.92f)
+                .fillMaxWidth(0.86f)
                 .height(44.dp)
         )
 
@@ -351,7 +351,7 @@ private fun TelemetryRow(
     tuningMode: TuningMode
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(0.9f),
+        modifier = Modifier.fillMaxWidth(0.78f),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

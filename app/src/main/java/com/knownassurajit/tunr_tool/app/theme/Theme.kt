@@ -37,8 +37,6 @@ fun TunrTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window ?: return@SideEffect
-            window.statusBarColor = AmoledBlack.toArgb()
-            window.navigationBarColor = AmoledBlack.toArgb()
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = false
                 isAppearanceLightNavigationBars = false

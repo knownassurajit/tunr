@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -104,30 +100,41 @@ fun StringMatrix(
 
         // Bento Grid for Strings (3 columns for 6 strings, 2 columns for 4 strings)
         val columns = if (strings.size <= 4) 2 else 3
+        val rows = strings.chunked(columns)
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(columns),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(strings) { item ->
-                val isActive = item.stringNumber == activeStringNumber
-                val isLocked = lockedStringNumbers.contains(item.stringNumber)
+            for (rowStrings in rows) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    for (item in rowStrings) {
+                        val isActive = item.stringNumber == activeStringNumber
+                        val isLocked = lockedStringNumbers.contains(item.stringNumber)
 
-                StringCard(
-                    stringItem = item,
-                    isActive = isActive,
-                    isLocked = isLocked,
-                    calibratedHz = item.getCalibratedFrequency(a4CalibrationHz),
-                    onClick = {
-                        if (isActive && isManualLockMode) {
-                            onStringSelected(null) // Return to auto
-                        } else {
-                            onStringSelected(item) // Focus string
+                        Box(modifier = Modifier.weight(1f)) {
+                            StringCard(
+                                stringItem = item,
+                                isActive = isActive,
+                                isLocked = isLocked,
+                                calibratedHz = item.getCalibratedFrequency(a4CalibrationHz),
+                                onClick = {
+                                    if (isActive && isManualLockMode) {
+                                        onStringSelected(null) // Return to auto
+                                    } else {
+                                        onStringSelected(item) // Focus string
+                                    }
+                                }
+                            )
                         }
                     }
-                )
+                    repeat(columns - rowStrings.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
