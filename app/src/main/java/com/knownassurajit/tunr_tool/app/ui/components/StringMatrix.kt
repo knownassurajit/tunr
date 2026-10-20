@@ -1,6 +1,9 @@
 package com.knownassurajit.tunr_tool.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,13 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -27,16 +30,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knownassurajit.tunr_tool.app.model.InstrumentString
 import com.knownassurajit.tunr_tool.app.theme.BentoShape
-import com.knownassurajit.tunr_tool.app.theme.BorderMedium
-import com.knownassurajit.tunr_tool.app.theme.BorderSubtle
+import com.knownassurajit.tunr_tool.app.theme.CardBackground
+import com.knownassurajit.tunr_tool.app.theme.CardBorder
+import com.knownassurajit.tunr_tool.app.theme.CardBorderActive
+import com.knownassurajit.tunr_tool.app.theme.CardBorderLocked
 import com.knownassurajit.tunr_tool.app.theme.LockContainer
 import com.knownassurajit.tunr_tool.app.theme.LockEmerald
 import com.knownassurajit.tunr_tool.app.theme.LockMint
 import com.knownassurajit.tunr_tool.app.theme.MatteBlue
 import com.knownassurajit.tunr_tool.app.theme.MatteBlueContainer
 import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceContainer
-import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceLow
 import com.knownassurajit.tunr_tool.app.theme.PillShape
+import com.knownassurajit.tunr_tool.app.theme.SectionLabelColor
 import com.knownassurajit.tunr_tool.app.theme.TextPrimary
 import com.knownassurajit.tunr_tool.app.theme.TextSecondary
 import com.knownassurajit.tunr_tool.app.theme.TextTertiary
@@ -68,9 +73,9 @@ fun StringMatrix(
         ) {
             Text(
                 text = "STRINGS",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextTertiary,
+                color = SectionLabelColor,
                 letterSpacing = 1.2.sp
             )
             // Mode Indicator Badge (AUTO vs MANUAL)
@@ -80,15 +85,15 @@ fun StringMatrix(
                     .background(if (isManualLockMode) MatteBlueContainer else MatteSurfaceContainer)
                     .border(
                         1.dp,
-                        if (isManualLockMode) MatteBlue.copy(alpha = 0.5f) else BorderSubtle,
+                        if (isManualLockMode) MatteBlue.copy(alpha = 0.4f) else CardBorder,
                         PillShape
                     )
                     .clickable { onStringSelected(null) }
-                    .padding(horizontal = 10.dp, vertical = 3.dp)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = if (isManualLockMode) "MANUAL LOCK (RESET TO AUTO)" else "AUTO-DETECTING",
-                    fontSize = 10.sp,
+                    text = if (isManualLockMode) "MANUAL LOCK (TAP TO AUTO)" else "AUTO-DETECTING",
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isManualLockMode) MatteBlue else TextSecondary,
                     letterSpacing = 0.5.sp
@@ -150,27 +155,37 @@ private fun StringCard(
 ) {
     val borderColor by animateColorAsState(
         targetValue = when {
-            isLocked -> LockEmerald
-            isActive -> MatteBlue
-            else -> BorderSubtle
+            isLocked -> CardBorderLocked
+            isActive -> CardBorderActive
+            else -> CardBorder
         },
+        animationSpec = tween(200),
         label = "stringBorder"
     )
 
     val bgColor by animateColorAsState(
         targetValue = when {
-            isLocked -> LockContainer.copy(alpha = 0.6f)
-            isActive -> MatteBlueContainer.copy(alpha = 0.7f)
-            else -> MatteSurfaceLow
+            isLocked -> LockContainer.copy(alpha = 0.5f)
+            isActive -> MatteBlueContainer.copy(alpha = 0.6f)
+            else -> CardBackground
         },
+        animationSpec = tween(200),
         label = "stringBg"
+    )
+
+    // Subtle scale animation on active
+    val cardScale by animateFloatAsState(
+        targetValue = if (isActive || isLocked) 1.02f else 1f,
+        animationSpec = tween(200, easing = FastOutSlowInEasing),
+        label = "cardScale"
     )
 
     Box(
         modifier = Modifier
+            .scale(cardScale)
             .clip(BentoShape)
             .background(bgColor)
-            .border(1.2.dp, borderColor, BentoShape)
+            .border(1.dp, borderColor, BentoShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
@@ -184,7 +199,7 @@ private fun StringCard(
                     text = "STRING ${stringItem.stringNumber}",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextTertiary,
+                    color = SectionLabelColor,
                     letterSpacing = 0.8.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
@@ -193,7 +208,11 @@ private fun StringCard(
                         text = stringItem.noteName,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isLocked) LockMint else if (isActive) MatteBlue else TextPrimary
+                        color = when {
+                            isLocked -> LockMint
+                            isActive -> MatteBlue
+                            else -> TextPrimary
+                        }
                     )
                     Text(
                         text = "${stringItem.octave}",
@@ -231,7 +250,7 @@ private fun StringCard(
                     Text(
                         text = "Hz",
                         fontSize = 9.sp,
-                        color = TextTertiary.copy(alpha = 0.7f)
+                        color = TextTertiary.copy(alpha = 0.6f)
                     )
                 }
             }

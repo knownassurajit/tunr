@@ -1,8 +1,13 @@
 package com.knownassurajit.tunr_tool.app.ui
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,7 +29,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Icon
@@ -44,27 +48,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.knownassurajit.tunr_tool.app.model.InstrumentType
+import com.knownassurajit.tunr_tool.app.theme.AmoledBlack
+import com.knownassurajit.tunr_tool.app.theme.BorderMedium
+import com.knownassurajit.tunr_tool.app.theme.BorderSubtle
+import com.knownassurajit.tunr_tool.app.theme.CardBackground
+import com.knownassurajit.tunr_tool.app.theme.CardBorder
+import com.knownassurajit.tunr_tool.app.theme.LockEmerald
+import com.knownassurajit.tunr_tool.app.theme.LockMint
+import com.knownassurajit.tunr_tool.app.theme.MatteSurface
+import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceLow
+import com.knownassurajit.tunr_tool.app.theme.PillShape
+import com.knownassurajit.tunr_tool.app.theme.TextPrimary
+import com.knownassurajit.tunr_tool.app.theme.TextSecondary
 import com.knownassurajit.tunr_tool.app.ui.components.InstrumentGraphic
 import com.knownassurajit.tunr_tool.app.ui.components.MetronomeScreen
 import com.knownassurajit.tunr_tool.app.ui.components.PresetsBottomSheet
 import com.knownassurajit.tunr_tool.app.ui.components.SettingsBottomSheet
 import com.knownassurajit.tunr_tool.app.ui.components.StringMatrix
 import com.knownassurajit.tunr_tool.app.ui.components.TunerHUD
-import com.knownassurajit.tunr_tool.app.theme.AmoledBlack
-import com.knownassurajit.tunr_tool.app.theme.BorderMedium
-import com.knownassurajit.tunr_tool.app.theme.BorderSubtle
-import com.knownassurajit.tunr_tool.app.theme.LockEmerald
-import com.knownassurajit.tunr_tool.app.theme.LockMint
-import com.knownassurajit.tunr_tool.app.theme.MatteBackground
-import com.knownassurajit.tunr_tool.app.theme.MatteBlue
-import com.knownassurajit.tunr_tool.app.theme.MatteBlueContainer
-import com.knownassurajit.tunr_tool.app.theme.MatteSurface
-import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceContainer
-import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceLow
-import com.knownassurajit.tunr_tool.app.theme.PillShape
-import com.knownassurajit.tunr_tool.app.theme.TextPrimary
-import com.knownassurajit.tunr_tool.app.theme.TextSecondary
-import com.knownassurajit.tunr_tool.app.theme.TextTertiary
 
 @Composable
 fun TunerScreen(
@@ -104,75 +106,90 @@ fun TunerScreen(
                 .padding(innerPadding)
                 .background(AmoledBlack)
         ) {
-            when (uiState.activeTab) {
-                NavigationTab.TUNER -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Core Pitch Guidance HUD
-                        TunerHUD(
-                            currentNote = uiState.currentNote,
-                            detectedFrequencyHz = uiState.detectedFrequencyHz,
-                            targetFrequencyHz = uiState.targetFrequencyHz,
-                            centsDeviation = uiState.centsDeviation,
-                            isVoiced = uiState.isVoiced,
-                            rms = uiState.rms,
-                            tuningMode = uiState.tuningMode
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Interactive Bento String Matrix
-                        if (!uiState.currentPreset.isChromatic) {
-                            StringMatrix(
-                                strings = uiState.currentPreset.strings,
-                                activeStringNumber = uiState.activeStringNumber,
-                                lockedStringNumbers = uiState.lockedStringNumbers,
-                                a4CalibrationHz = uiState.a4CalibrationHz,
-                                isManualLockMode = uiState.isManualLockMode,
-                                onStringSelected = { stringItem ->
-                                    viewModel.selectString(stringItem)
-                                }
-                            )
-                        } else {
-                            // Chromatic Free-Tuning Banner
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(PillShape)
-                                    .background(MatteSurfaceLow)
-                                    .border(1.dp, BorderSubtle, PillShape)
-                                    .padding(vertical = 12.dp, horizontal = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "CHROMATIC TUNER • ALL 12 TONES DETECTED",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextSecondary,
-                                    letterSpacing = 1.sp
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
+            AnimatedContent(
+                targetState = uiState.activeTab,
+                transitionSpec = {
+                    if (targetState == NavigationTab.METRONOME) {
+                        (slideInHorizontally { width -> width / 5 } + fadeIn(animationSpec = tween(200)))
+                            .togetherWith(slideOutHorizontally { width -> -width / 5 } + fadeOut(animationSpec = tween(200)))
+                    } else {
+                        (slideInHorizontally { width -> -width / 5 } + fadeIn(animationSpec = tween(200)))
+                            .togetherWith(slideOutHorizontally { width -> width / 5 } + fadeOut(animationSpec = tween(200)))
                     }
-                }
+                },
+                label = "tabContentTransition",
+                modifier = Modifier.fillMaxSize()
+            ) { tab ->
+                when (tab) {
+                    NavigationTab.TUNER -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Core Pitch Guidance HUD
+                            TunerHUD(
+                                currentNote = uiState.currentNote,
+                                detectedFrequencyHz = uiState.detectedFrequencyHz,
+                                targetFrequencyHz = uiState.targetFrequencyHz,
+                                centsDeviation = uiState.centsDeviation,
+                                isVoiced = uiState.isVoiced,
+                                rms = uiState.rms,
+                                tuningMode = uiState.tuningMode
+                            )
 
-                NavigationTab.METRONOME -> {
-                    MetronomeScreen(
-                        bpm = uiState.metronomeBpm,
-                        beatsPerMeasure = uiState.metronomeBeats,
-                        isPlaying = uiState.isMetronomePlaying,
-                        currentBeat = uiState.metronomeCurrentBeat,
-                        onBpmChanged = { viewModel.setMetronomeBpm(it) },
-                        onBeatsPerMeasureChanged = { viewModel.setMetronomeBeats(it) },
-                        onTogglePlay = { viewModel.toggleMetronome() }
-                    )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Interactive Bento String Matrix
+                            if (!uiState.currentPreset.isChromatic) {
+                                StringMatrix(
+                                    strings = uiState.currentPreset.strings,
+                                    activeStringNumber = uiState.activeStringNumber,
+                                    lockedStringNumbers = uiState.lockedStringNumbers,
+                                    a4CalibrationHz = uiState.a4CalibrationHz,
+                                    isManualLockMode = uiState.isManualLockMode,
+                                    onStringSelected = { stringItem ->
+                                        viewModel.selectString(stringItem)
+                                    }
+                                )
+                            } else {
+                                // Chromatic Free-Tuning Banner
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(PillShape)
+                                        .background(CardBackground)
+                                        .border(1.dp, CardBorder, PillShape)
+                                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "CHROMATIC TUNER • ALL 12 TONES DETECTED",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextSecondary,
+                                        letterSpacing = 1.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+                    }
+
+                    NavigationTab.METRONOME -> {
+                        MetronomeScreen(
+                            bpm = uiState.metronomeBpm,
+                            beatsPerMeasure = uiState.metronomeBeats,
+                            isPlaying = uiState.isMetronomePlaying,
+                            currentBeat = uiState.metronomeCurrentBeat,
+                            onBpmChanged = { viewModel.setMetronomeBpm(it) },
+                            onBeatsPerMeasureChanged = { viewModel.setMetronomeBeats(it) },
+                            onTogglePlay = { viewModel.toggleMetronome() }
+                        )
+                    }
                 }
             }
 
@@ -205,7 +222,7 @@ fun TunerScreen(
 @Composable
 private fun TopTunerBar(
     presetName: String,
-    instrumentType: com.knownassurajit.tunr_tool.app.model.InstrumentType,
+    instrumentType: InstrumentType,
     onOpenPresets: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
@@ -297,7 +314,7 @@ private fun FloatingPillNavBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(bottom = 14.dp),
+            .padding(bottom = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -305,15 +322,26 @@ private fun FloatingPillNavBar(
                 .clip(PillShape)
                 .background(MatteSurface)
                 .border(1.2.dp, BorderMedium, PillShape)
-                .padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Tuner Tab
             val isTuner = activeTab == NavigationTab.TUNER
+            val tunerBgColor by animateColorAsState(
+                targetValue = if (isTuner) LockEmerald else Color.Transparent,
+                animationSpec = tween(durationMillis = 180),
+                label = "tunerTabBg"
+            )
+            val tunerTextColor by animateColorAsState(
+                targetValue = if (isTuner) AmoledBlack else TextSecondary,
+                animationSpec = tween(durationMillis = 180),
+                label = "tunerTabText"
+            )
+
             Row(
                 modifier = Modifier
                     .clip(PillShape)
-                    .background(if (isTuner) LockEmerald else Color.Transparent)
+                    .background(tunerBgColor)
                     .clickable { onTabSelected(NavigationTab.TUNER) }
                     .padding(horizontal = 22.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -321,7 +349,7 @@ private fun FloatingPillNavBar(
                 Icon(
                     imageVector = Icons.Filled.GraphicEq,
                     contentDescription = "Tuner",
-                    tint = if (isTuner) AmoledBlack else TextSecondary,
+                    tint = tunerTextColor,
                     modifier = Modifier.size(17.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -329,17 +357,28 @@ private fun FloatingPillNavBar(
                     text = "TUNER",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isTuner) AmoledBlack else TextSecondary,
+                    color = tunerTextColor,
                     letterSpacing = 1.sp
                 )
             }
 
             // Metronome Tab
             val isMetronome = activeTab == NavigationTab.METRONOME
+            val metronomeBgColor by animateColorAsState(
+                targetValue = if (isMetronome) LockEmerald else Color.Transparent,
+                animationSpec = tween(durationMillis = 180),
+                label = "metronomeTabBg"
+            )
+            val metronomeTextColor by animateColorAsState(
+                targetValue = if (isMetronome) AmoledBlack else TextSecondary,
+                animationSpec = tween(durationMillis = 180),
+                label = "metronomeTabText"
+            )
+
             Row(
                 modifier = Modifier
                     .clip(PillShape)
-                    .background(if (isMetronome) LockEmerald else Color.Transparent)
+                    .background(metronomeBgColor)
                     .clickable { onTabSelected(NavigationTab.METRONOME) }
                     .padding(horizontal = 22.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -347,7 +386,7 @@ private fun FloatingPillNavBar(
                 Icon(
                     imageVector = Icons.Filled.Speed,
                     contentDescription = "Metronome",
-                    tint = if (isMetronome) AmoledBlack else TextSecondary,
+                    tint = metronomeTextColor,
                     modifier = Modifier.size(17.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -355,7 +394,7 @@ private fun FloatingPillNavBar(
                     text = "METRONOME",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isMetronome) AmoledBlack else TextSecondary,
+                    color = metronomeTextColor,
                     letterSpacing = 1.sp
                 )
             }

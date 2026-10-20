@@ -2,7 +2,11 @@ package com.knownassurajit.tunr_tool.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,8 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -39,15 +42,15 @@ import com.knownassurajit.tunr_tool.app.model.TuningMode
 import com.knownassurajit.tunr_tool.app.theme.AmoledBlack
 import com.knownassurajit.tunr_tool.app.theme.BorderMedium
 import com.knownassurajit.tunr_tool.app.theme.BorderSubtle
+import com.knownassurajit.tunr_tool.app.theme.CardBackground
+import com.knownassurajit.tunr_tool.app.theme.CardBorder
 import com.knownassurajit.tunr_tool.app.theme.FlatBlue
 import com.knownassurajit.tunr_tool.app.theme.LockContainer
 import com.knownassurajit.tunr_tool.app.theme.LockEmerald
 import com.knownassurajit.tunr_tool.app.theme.LockGlow
 import com.knownassurajit.tunr_tool.app.theme.LockMint
-import com.knownassurajit.tunr_tool.app.theme.MatteBackground
 import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceContainer
 import com.knownassurajit.tunr_tool.app.theme.OnLockContainer
-import com.knownassurajit.tunr_tool.app.theme.MatteSurfaceLow
 import com.knownassurajit.tunr_tool.app.theme.PillShape
 import com.knownassurajit.tunr_tool.app.theme.SharpAmber
 import com.knownassurajit.tunr_tool.app.theme.TextPrimary
@@ -55,6 +58,8 @@ import com.knownassurajit.tunr_tool.app.theme.TextSecondary
 import com.knownassurajit.tunr_tool.app.theme.TextTertiary
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Focused, uncluttered Pitch Guidance HUD.
@@ -80,18 +85,18 @@ fun TunerHUD(
     // Animated colors and values for smooth, organic feedback
     val animatedCents by animateFloatAsState(
         targetValue = if (isVoiced) centsDeviation.coerceIn(-50f, 50f) else 0f,
-        animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "animatedCents"
     )
 
     val noteColor by animateColorAsState(
         targetValue = when {
-            !isVoiced -> TextSecondary.copy(alpha = 0.5f)
+            !isVoiced -> TextTertiary.copy(alpha = 0.4f)
             isInTune -> LockEmerald
             centsDeviation < 0f -> FlatBlue
             else -> SharpAmber
         },
-        animationSpec = tween(150),
+        animationSpec = tween(200),
         label = "noteColor"
     )
 
@@ -101,60 +106,112 @@ fun TunerHUD(
             isVoiced -> Color(0x1A38BDF8)
             else -> Color.Transparent
         },
-        animationSpec = tween(200),
+        animationSpec = tween(250),
         label = "haloGlow"
+    )
+
+    // Subtle breathing animation for idle state
+    val infiniteTransition = rememberInfiniteTransition(label = "hudBreathing")
+    val breathingAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathingAlpha"
+    )
+
+    // Animated border color for the HUD container
+    val containerBorderColor by animateColorAsState(
+        targetValue = when {
+            isInTune -> LockEmerald.copy(alpha = 0.5f)
+            isVoiced -> noteColor.copy(alpha = 0.2f)
+            else -> CardBorder
+        },
+        animationSpec = tween(300),
+        label = "containerBorder"
     )
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(PillShape)
-            .background(MatteSurfaceLow)
-            .border(1.dp, if (isInTune) LockEmerald.copy(alpha = 0.5f) else BorderSubtle, PillShape)
+            .background(CardBackground)
+            .border(1.dp, containerBorderColor, PillShape)
             .padding(vertical = 28.dp, horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         // 1. Audio Activity Ring & Giant Note Core
         Box(
-            modifier = Modifier.size(190.dp),
+            modifier = Modifier.size(200.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Ambient breathing ring reactive to audio amplitude
-            Canvas(modifier = Modifier.size(190.dp)) {
+            Canvas(modifier = Modifier.size(200.dp)) {
                 val amplitudeScale = if (isVoiced) (rms * 8f).coerceIn(0f, 1f) else 0f
-                val ringRadius = (size.minDimension / 2f) - 10.dp.toPx()
+                val ringRadius = (size.minDimension / 2f) - 12.dp.toPx()
 
-                // Soft background halo
+                // Soft ambient halo glow
                 drawCircle(
                     color = haloGlowColor,
-                    radius = ringRadius + (amplitudeScale * 14.dp.toPx())
+                    radius = ringRadius + (amplitudeScale * 16.dp.toPx())
                 )
 
-                // Outer circular track
+                // Outer circular track with consistent width
                 drawCircle(
                     color = BorderSubtle,
                     radius = ringRadius,
-                    style = Stroke(width = 3.dp.toPx())
+                    style = Stroke(width = 2.5.dp.toPx())
                 )
+
+                // Graduated tick marks around the arc for visual calibration
+                val tickCount = 24
+                for (i in 0 until tickCount) {
+                    val angle = Math.toRadians((270.0 - 120.0) + (240.0 * i / (tickCount - 1)))
+                    val isMajor = i % 6 == 0
+                    val isCenter = i == tickCount / 2
+                    val innerR = ringRadius - (if (isMajor) 10.dp.toPx() else 6.dp.toPx())
+                    val outerR = ringRadius - 2.dp.toPx()
+                    val tickColor = when {
+                        isCenter -> if (isInTune) LockEmerald else TextSecondary
+                        isMajor -> BorderMedium
+                        else -> BorderSubtle.copy(alpha = 0.6f)
+                    }
+
+                    drawLine(
+                        color = tickColor,
+                        start = Offset(
+                            (size.width / 2f + innerR * cos(angle)).toFloat(),
+                            (size.height / 2f + innerR * sin(angle)).toFloat()
+                        ),
+                        end = Offset(
+                            (size.width / 2f + outerR * cos(angle)).toFloat(),
+                            (size.height / 2f + outerR * sin(angle)).toFloat()
+                        ),
+                        strokeWidth = if (isCenter) 2.5f else if (isMajor) 1.8f else 1f,
+                        cap = StrokeCap.Round
+                    )
+                }
 
                 // Radial cent deviation arc
                 if (isVoiced) {
-                    val sweepAngle = (animatedCents / 50f) * 110f
+                    val sweepAngle = (animatedCents / 50f) * 120f
                     drawArc(
                         color = noteColor,
                         startAngle = 270f,
                         sweepAngle = sweepAngle,
                         useCenter = false,
-                        style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
                     )
                 }
 
-                // Center zero reference tick
+                // Center zero reference marker (top of circle)
+                val markerRadius = if (isInTune) 5.dp.toPx() else 3.5.dp.toPx()
                 drawCircle(
                     color = if (isInTune) LockEmerald else BorderMedium,
-                    radius = 4.dp.toPx(),
-                    center = Offset(size.width / 2f, 10.dp.toPx())
+                    radius = markerRadius,
+                    center = Offset(size.width / 2f, 12.dp.toPx())
                 )
             }
 
@@ -168,31 +225,31 @@ fun TunerHUD(
                     ) {
                         Text(
                             text = currentNote.name,
-                            fontSize = 68.sp,
+                            fontSize = 64.sp,
                             fontWeight = FontWeight.Bold,
                             color = noteColor,
                             letterSpacing = (-2).sp
                         )
                         Text(
                             text = currentNote.displayName.substring(currentNote.name.length),
-                            fontSize = 28.sp,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = noteColor.copy(alpha = 0.85f),
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            color = noteColor.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(bottom = 10.dp)
                         )
                     }
                 } else {
                     Text(
-                        text = "--",
-                        fontSize = 64.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextTertiary.copy(alpha = 0.6f)
+                        text = "—",
+                        fontSize = 56.sp,
+                        fontWeight = FontWeight.Light,
+                        color = TextTertiary.copy(alpha = if (!isVoiced) breathingAlpha else 0.5f)
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // 2. Unambiguous Directional Guidance Badge
         DirectionalActionBadge(
@@ -202,7 +259,7 @@ fun TunerHUD(
             tuningMode = tuningMode
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // 3. Linear Micro-Fine Deviation Needle Meter
         LinearCentMeter(
@@ -210,11 +267,11 @@ fun TunerHUD(
             isInTune = isInTune,
             thresholdCents = tuningMode.inTuneThresholdCents,
             modifier = Modifier
-                .fillMaxWidth(0.86f)
-                .height(44.dp)
+                .fillMaxWidth(0.84f)
+                .height(40.dp)
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // 4. Granular Telemetry Panel (Target Hz, Actual Hz, Cents)
         TelemetryRow(
@@ -241,14 +298,26 @@ private fun DirectionalActionBadge(
         else -> Triple("TUNE DOWN ↘", Color(0xFF332005), SharpAmber)
     }
 
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            isInTune -> LockEmerald.copy(alpha = 0.6f)
+            isVoiced -> contentColor.copy(alpha = 0.3f)
+            else -> Color.Transparent
+        },
+        animationSpec = tween(200),
+        label = "badgeBorder"
+    )
+
     Box(
         modifier = Modifier
             .clip(PillShape)
             .background(bgColor)
-            .border(
-                1.dp,
-                if (isInTune) LockEmerald.copy(alpha = 0.6f) else contentColor.copy(alpha = 0.3f),
-                PillShape
+            .then(
+                if (borderColor != Color.Transparent) {
+                    Modifier.border(1.dp, borderColor, PillShape)
+                } else {
+                    Modifier
+                }
             )
             .padding(horizontal = 20.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
@@ -256,9 +325,9 @@ private fun DirectionalActionBadge(
         Text(
             text = text,
             color = contentColor,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
+            letterSpacing = 1.2.sp
         )
     }
 }
@@ -275,30 +344,32 @@ private fun LinearCentMeter(
         val h = size.height
         val centerY = h / 2f
         val centerX = w / 2f
+        val railHeight = 28.dp.toPx()
 
         // Base container rail
         drawRoundRect(
             color = AmoledBlack,
-            topLeft = Offset(0f, centerY - 14.dp.toPx()),
-            size = Size(w, 28.dp.toPx()),
-            cornerRadius = CornerRadius(14.dp.toPx())
+            topLeft = Offset(0f, centerY - railHeight / 2f),
+            size = Size(w, railHeight),
+            cornerRadius = CornerRadius(railHeight / 2f)
         )
 
-        // Center in-tune target zone (illuminated emerald bar)
+        // Center in-tune target zone
         val targetZoneWidth = (thresholdCents / 50f) * (w / 2f) * 2f
+        val zoneColor = if (isInTune) LockEmerald.copy(alpha = 0.22f) else Color(0x1438BDF8)
         drawRoundRect(
-            color = if (isInTune) LockEmerald.copy(alpha = 0.25f) else Color(0x1838BDF8),
-            topLeft = Offset(centerX - targetZoneWidth / 2f, centerY - 12.dp.toPx()),
-            size = Size(targetZoneWidth, 24.dp.toPx()),
+            color = zoneColor,
+            topLeft = Offset(centerX - targetZoneWidth / 2f, centerY - (railHeight / 2f - 2.dp.toPx())),
+            size = Size(targetZoneWidth, railHeight - 4.dp.toPx()),
             cornerRadius = CornerRadius(6.dp.toPx())
         )
 
-        // Graduation tick marks (-50, -25, 0, +25, +50)
+        // Graduation tick marks
         val tickOffsets = listOf(-50f, -25f, -10f, 0f, 10f, 25f, 50f)
         for (tick in tickOffsets) {
             val tickX = centerX + (tick / 50f) * (w / 2f - 18.dp.toPx())
             val isCenter = tick == 0f
-            val tickHeight = if (isCenter) 18.dp.toPx() else 10.dp.toPx()
+            val tickHeight = if (isCenter) 16.dp.toPx() else 8.dp.toPx()
             val tickColor = if (isCenter) {
                 if (isInTune) LockEmerald else TextSecondary
             } else {
@@ -327,16 +398,16 @@ private fun LinearCentMeter(
         // Needle vertical bar
         drawLine(
             color = needleColor,
-            start = Offset(needleX, centerY - 16.dp.toPx()),
-            end = Offset(needleX, centerY + 16.dp.toPx()),
-            strokeWidth = 3.5f,
+            start = Offset(needleX, centerY - 14.dp.toPx()),
+            end = Offset(needleX, centerY + 14.dp.toPx()),
+            strokeWidth = 3f,
             cap = StrokeCap.Round
         )
 
         // Needle center dot
         drawCircle(
             color = Color.White,
-            radius = 3.dp.toPx(),
+            radius = 2.5.dp.toPx(),
             center = Offset(needleX, centerY)
         )
     }
@@ -351,7 +422,7 @@ private fun TelemetryRow(
     tuningMode: TuningMode
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(0.78f),
+        modifier = Modifier.fillMaxWidth(0.82f),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -359,15 +430,15 @@ private fun TelemetryRow(
         Column(horizontalAlignment = Alignment.Start) {
             Text(
                 text = "TARGET",
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 color = TextTertiary,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
             Text(
-                text = if (targetFrequencyHz > 0f) String.format(Locale.US, "%.1f Hz", targetFrequencyHz) else "--",
-                fontSize = 13.sp,
-                color = TextSecondary,
+                text = if (targetFrequencyHz > 0f) String.format(Locale.US, "%.1f Hz", targetFrequencyHz) else "—",
+                fontSize = 12.sp,
+                color = if (isVoiced) TextSecondary else TextTertiary,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Medium
             )
@@ -377,9 +448,9 @@ private fun TelemetryRow(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "DEVIATION",
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 color = TextTertiary,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
             val centsText = when {
@@ -389,7 +460,7 @@ private fun TelemetryRow(
             }
             Text(
                 text = centsText,
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 color = if (abs(centsDeviation) <= tuningMode.inTuneThresholdCents && isVoiced) LockEmerald else TextPrimary,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold
@@ -400,15 +471,15 @@ private fun TelemetryRow(
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = "DETECTED",
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 color = TextTertiary,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
             Text(
-                text = if (isVoiced && detectedFrequencyHz > 0f) String.format(Locale.US, "%.1f Hz", detectedFrequencyHz) else "--",
-                fontSize = 13.sp,
-                color = TextSecondary,
+                text = if (isVoiced && detectedFrequencyHz > 0f) String.format(Locale.US, "%.1f Hz", detectedFrequencyHz) else "—",
+                fontSize = 12.sp,
+                color = if (isVoiced) TextSecondary else TextTertiary,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Medium
             )

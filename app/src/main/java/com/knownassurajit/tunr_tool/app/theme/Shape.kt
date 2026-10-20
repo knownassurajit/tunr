@@ -12,5 +12,7 @@ val TunrShapes = Shapes(
     extraLarge = RoundedCornerShape(32.dp)
 )
 
+// Shared shape tokens used across all components for consistency
 val PillShape = RoundedCornerShape(percent = 50)
 val BentoShape = RoundedCornerShape(20.dp)
+val CardShape = RoundedCornerShape(16.dp)
