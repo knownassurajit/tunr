@@ -33,7 +33,7 @@ jobs:
       version_name: ${{ steps.version.outputs.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Resolve version
         id: version
@@ -101,7 +101,7 @@ jobs:
     environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.track || 'internal' }}
     steps:
       - name: Checkout listing metadata
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download AAB
         uses: actions/download-artifact@v4
