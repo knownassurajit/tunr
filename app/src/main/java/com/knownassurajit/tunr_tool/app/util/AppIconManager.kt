@@ -84,8 +84,19 @@ object AppIconManager {
 
             val targetComponent = ComponentName(packageName, "$packageName$targetAliasSuffix")
 
-            val currentState = pm.getComponentEnabledSetting(targetComponent)
-            if (currentState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+            // Ensure ONLY targetComponent is enabled and ALL other aliases are explicitly disabled.
+            // Do not early-return solely on targetComponent state: another alias might also be enabled
+            // (e.g. after install, update, or theme change), creating duplicate icons in the app library/launcher.
+            val targetState = pm.getComponentEnabledSetting(targetComponent)
+            val hasOtherEnabled = ALL_ALIASES.any { alias ->
+                alias != targetAliasSuffix &&
+                    pm.getComponentEnabledSetting(ComponentName(packageName, "$packageName$alias")) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            }
+
+            val targetAlreadyEnabled = targetState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
+                (targetState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT && targetAliasSuffix == ALIAS_EMERALD)
+
+            if (targetAlreadyEnabled && !hasOtherEnabled) {
                 return
             }
 
@@ -107,7 +118,7 @@ object AppIconManager {
                     }
                 }
             }
-            Log.d(TAG, "Switched launcher icon to $targetAliasSuffix")
+            Log.d(TAG, "Switched launcher icon to $targetAliasSuffix and disabled others")
         } catch (e: Exception) {
             Log.w(TAG, "Could not update launcher icon dynamically: ${e.message}")
         }

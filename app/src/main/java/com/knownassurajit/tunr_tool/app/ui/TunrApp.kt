@@ -361,12 +361,17 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
                     seed = remember(tuning.id) { tuning.strings.map { CustomString(it.note, it.octave, it.centsOffset) } },
                     a4Hz = settings.a4Hz,
                     onSave = { name, strings ->
-                        val tuning = CustomTuning(id ?: vm.newCustomId(), name, strings)
-                        vm.saveCustomTuning(tuning)
+                        val targetId = id ?: vm.newCustomId()
+                        editingId = null
+                        val newTuning = CustomTuning(targetId, name, strings)
+                        vm.saveCustomTuning(newTuning)
                         // A tuning you just created or edited is the one you want on the tuner.
-                        vm.selectTuning(tuning.toTuning())
+                        vm.selectTuning(newTuning.toTuning())
                     },
-                    onDismiss = { sheet = TunrSheet.Library },
+                    onDismiss = {
+                        editingId = null
+                        sheet = TunrSheet.Library
+                    },
                 )
             }
             TunrSheet.Settings -> SettingsSheet(

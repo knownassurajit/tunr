@@ -76,6 +76,7 @@ fun CustomTuningEditor(
         }
     }
     var touchedName by remember { mutableStateOf(initial != null) }
+    var isSaving by remember { mutableStateOf(false) }
 
     val errors = remember(name, strings.toList(), takenNames) { TuningValidation.validate(name, strings.toList(), takenNames) }
     val nameError = when {
@@ -86,6 +87,8 @@ fun CustomTuningEditor(
     }
 
     fun close(after: () -> Unit = {}) {
+        if (isSaving) return
+        isSaving = true
         scope.launch { sheetState.hide() }.invokeOnCompletion { after(); onDismiss() }
     }
 
@@ -168,10 +171,10 @@ fun CustomTuningEditor(
             }
             item {
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = { close() }, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                    OutlinedButton(onClick = { close() }, enabled = !isSaving, modifier = Modifier.weight(1f)) { Text("Cancel") }
                     Button(
                         onClick = { close { onSave(name.trim(), strings.toList()) } },
-                        enabled = errors.isEmpty(),
+                        enabled = errors.isEmpty() && !isSaving,
                         modifier = Modifier.weight(1f),
                     ) { Text("Save") }
                 }
