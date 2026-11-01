@@ -1,0 +1,12 @@
+# Hand-written baseline profile (wildcard rules): AOT-compiles TUNR's own code and the Compose runtime paths
+# used on the first frame, so cold start and the first tuner/metronome frames skip the interpreter.
+# TODO: replace with a profile recorded by a Macrobenchmark BaselineProfileRule on a real device.
+HSPLcom/knownassurajit/tunr_tool/app/**;->**(**)**
+Lcom/knownassurajit/tunr_tool/app/**;
+HSPLandroidx/compose/runtime/**;->**(**)**
+HSPLandroidx/compose/ui/**;->**(**)**
+HSPLandroidx/compose/foundation/**;->**(**)**
+HSPLandroidx/compose/animation/**;->**(**)**
+HSPLandroidx/compose/material3/**;->**(**)**
+HSPLandroidx/lifecycle/**;->**(**)**
+HSPLandroidx/activity/**;->**(**)**

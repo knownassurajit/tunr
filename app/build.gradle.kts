@@ -70,6 +70,14 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Opt-in Compose compiler reports: ./gradlew -PcomposeMetrics :app:compileReleaseKotlin  → app/build/compose_{reports,metrics}
+composeCompiler {
+    if (providers.gradleProperty("composeMetrics").isPresent) {
+        reportsDestination = layout.buildDirectory.dir("compose_reports")
+        metricsDestination = layout.buildDirectory.dir("compose_metrics")
+    }
+}
+
 tasks.matching { it.name.contains("AarMetadata") }.configureEach {
     enabled = false
 }
@@ -96,6 +104,11 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.graphics.shapes)
+  // Persistence + catalog/custom-tuning JSON
+  implementation(libs.androidx.datastore.preferences)
+  implementation(libs.kotlinx.serialization.json)
+  // Installs the bundled baseline profile (src/main/baseline-prof.txt) on first run
+  implementation(libs.androidx.profileinstaller)
   // Tooling
   debugImplementation(libs.androidx.compose.ui.tooling)
   // Instrumented tests

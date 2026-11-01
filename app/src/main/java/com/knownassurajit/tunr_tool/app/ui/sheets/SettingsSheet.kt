@@ -137,7 +137,7 @@ private val audioFilterGuide = SettingsSectionInfo(
     guideItems = listOf(
         "Noise Gate Threshold" to "Rejects room sounds, amp hum, and ambient chatter below the threshold so the tuner only listens to your instrument.",
         "Harmonic Speech Filter" to "Uses autocorrelation periodicity analysis to distinguish vibrating instrument strings from speaking voices, crowd noise, and clapping.",
-        "Subsonic 35Hz Filter" to "Blocks microphone DC drift, wind drafts, and physical handling thumps when holding or mounting your phone.",
+        "Subsonic 15 Hz Filter" to "Blocks microphone DC drift, wind drafts, and physical handling thumps when holding or mounting your phone.",
     )
 )
 
@@ -752,10 +752,10 @@ fun SettingsSheet(
                 )
             }
 
-            // Subsonic 35Hz Rumble Filter - M3 color indication, thumbContent = null
+            // Subsonic 15 Hz Rumble Filter - M3 color indication, thumbContent = null
             Surface(shape = MaterialTheme.shapes.extraLarge, color = scheme.surfaceContainerHigh) {
                 ListItem(
-                    headlineContent = { Text("Subsonic rumble filter (35 Hz)", style = MaterialTheme.typography.titleMedium) },
+                    headlineContent = { Text("Subsonic rumble filter (15 Hz)", style = MaterialTheme.typography.titleMedium) },
                     supportingContent = {
                         Text(
                             "Blocks phone handling noise, breathing drafts, and DC microphone drift",

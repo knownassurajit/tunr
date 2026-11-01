@@ -97,6 +97,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -147,6 +148,7 @@ fun MetronomeScreen(
     onNudge: (Int) -> Unit,
     onTap: () -> Unit,
     onSignature: (TimeSignature) -> Unit,
+    onSubdivision: (Int) -> Unit,
     onToggleAccent: (Int) -> Unit,
     onPlaying: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -159,7 +161,7 @@ fun MetronomeScreen(
 
     // Haptic feedback synchronization on metronome beat tick
     val haptics = LocalHapticFeedback.current
-    LaunchedEffect(state.beat, state.playing) {
+    LaunchedEffect(state.beatSerial, state.playing) {
         if (state.playing && settings.metronomeHaptics) {
             val accent = state.accents.getOrElse(state.beat) {
                 if (state.beat == 0) BeatAccent.ACCENT else BeatAccent.NORMAL
@@ -201,11 +203,14 @@ fun MetronomeScreen(
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    SignatureGroup(
-                        selected = state.signature,
-                        onSelect = onSignature,
-                        onOpenCustom = { showCustomSignatureDialog = true }
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SignatureGroup(
+                            selected = state.signature,
+                            onSelect = onSignature,
+                            onOpenCustom = { showCustomSignatureDialog = true }
+                        )
+                        SubdivisionGroup(state.subdivision, onSubdivision)
+                    }
                     TempoControls(state, onBpm, onNudge, onTap)
                     PlayButton(state.playing, onPlaying)
                 }
@@ -213,18 +218,23 @@ fun MetronomeScreen(
         } else {
             // Unified portrait distribution: fits seamlessly into viewport without scrolling
             val wheelSize = (maxHeight * 0.22f).coerceIn(145.dp, 190.dp)
+            val compactHeight = maxHeight < 700.dp // fall back to scrolling rather than clipping controls
             Column(
                 Modifier
                     .fillMaxSize()
+                    .then(if (compactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = if (compactHeight) Arrangement.spacedBy(14.dp) else Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                SignatureGroup(
-                    selected = state.signature,
-                    onSelect = onSignature,
-                    onOpenCustom = { showCustomSignatureDialog = true }
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SignatureGroup(
+                        selected = state.signature,
+                        onSelect = onSignature,
+                        onOpenCustom = { showCustomSignatureDialog = true }
+                    )
+                    SubdivisionGroup(state.subdivision, onSubdivision)
+                }
                 TempoCard(
                     state = state,
                     settings = settings,
@@ -325,6 +335,37 @@ private fun SignatureGroup(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (isCustom) FontWeight.Bold else FontWeight.Normal,
             )
+        }
+    }
+}
+
+private val SUBDIVISIONS = listOf(1 to "Off", 2 to "Eighths", 3 to "Triplets", 4 to "16ths")
+
+/** Clicks per beat. Connected toggle group, same expressive treatment as [SignatureGroup]. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SubdivisionGroup(selected: Int, onSelect: (Int) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = "Subdivision" },
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+    ) {
+        SUBDIVISIONS.forEachIndexed { index, (value, label) ->
+            ToggleButton(
+                checked = value == selected,
+                onCheckedChange = { onSelect(value) },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { role = Role.RadioButton },
+                shapes = when (index) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    SUBDIVISIONS.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                },
+            ) {
+                Text(label, maxLines = 1, style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
@@ -635,18 +676,20 @@ private fun BeatRow(
     val haptics = LocalHapticFeedback.current
     val totalBeats = state.signature.beats
 
-    val (slotSize, dotSizeAccent, dotSizeNormal) = when {
-        totalBeats <= 6 -> Triple(32.dp, 26.dp, 20.dp)
-        totalBeats <= 8 -> Triple(28.dp, 22.dp, 17.dp)
-        totalBeats <= 12 -> Triple(24.dp, 19.dp, 14.dp)
-        else -> Triple(20.dp, 16.dp, 12.dp)
+    // Every beat is a 48dp touch target (the dot inside shrinks for long bars instead of the target).
+    val slotSize = 48.dp
+    val (dotSizeAccent, dotSizeNormal) = when {
+        totalBeats <= 6 -> 26.dp to 20.dp
+        totalBeats <= 8 -> 22.dp to 17.dp
+        totalBeats <= 12 -> 19.dp to 14.dp
+        else -> 16.dp to 12.dp
     }
 
+    // Balanced rows that fit a 360dp phone: 1 row up to 6 beats, then two even rows, never an orphan.
     val maxPerRow = when {
-        totalBeats <= 8 -> totalBeats
-        totalBeats == 12 -> 6
-        totalBeats <= 10 -> 5
-        else -> 8
+        totalBeats <= 6 -> totalBeats
+        totalBeats <= 12 -> (totalBeats + 1) / 2
+        else -> 6
     }
 
     Column(
@@ -656,15 +699,15 @@ private fun BeatRow(
     ) {
         FlowRow(
             modifier = Modifier
-                .semantics(mergeDescendants = true) {
+                .semantics {
                     contentDescription = if (state.playing) {
                         "Beat ${state.beat + 1} of ${state.signature.beats}"
                     } else {
                         "${state.signature.beats} beats per measure"
                     }
                 },
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
             maxItemsInEachRow = maxPerRow
         ) {
             repeat(totalBeats) { index ->
@@ -681,11 +724,17 @@ private fun BeatRow(
 
                 val dotSize = if (accent == BeatAccent.ACCENT) dotSizeAccent else dotSizeNormal
 
+                val accentName = when (accent) {
+                    BeatAccent.ACCENT -> "accent"
+                    BeatAccent.NORMAL -> "normal"
+                    BeatAccent.MUTE -> "muted"
+                }
                 Box(
                     modifier = Modifier
                         .size(slotSize)
                         .clip(CircleShape)
-                        .clickable {
+                        .semantics { contentDescription = "Beat ${index + 1}, $accentName"; selected = active }
+                        .clickable(onClickLabel = "Change accent", role = Role.Button) {
                             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onToggleAccent(index)
                         },
