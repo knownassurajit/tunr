@@ -12,7 +12,6 @@ import com.knownassurajit.tunr_tool.app.model.ScreenTimeout
 import com.knownassurajit.tunr_tool.app.model.SettingsState
 import com.knownassurajit.tunr_tool.app.model.TimeSignature
 import com.knownassurajit.tunr_tool.app.model.TunerSensitivity
-import com.knownassurajit.tunr_tool.app.model.Tuning
 import com.knownassurajit.tunr_tool.app.model.Tunings
 
 /**
@@ -58,6 +57,7 @@ class TunrPreferences(private val prefs: SharedPreferences) {
         private const val KEY_SIG_BEATS = "metronome_sig_beats"
         private const val KEY_SIG_UNIT = "metronome_sig_unit"
         private const val KEY_ACCENTS_PREFIX = "metronome_accents_beats_"
+        private const val KEY_SUBDIVISION = "metronome_subdivision"
 
         // Navigation
         private const val KEY_LAST_DESTINATION = "last_navigation_destination"
@@ -163,13 +163,11 @@ class TunrPreferences(private val prefs: SharedPreferences) {
 
     // ---- TunerState -------------------------------------------------------
 
-    fun loadTuning(): Tuning {
-        val id = prefs.getString(KEY_TUNING_ID, Tunings.Standard.id)
-        return Tunings.All.firstOrNull { it.id == id } ?: Tunings.Standard
-    }
+    /** Id of the selected tuning (catalog, legacy, or custom). Resolution happens in the ViewModel. */
+    fun loadTuningId(): String = prefs.getString(KEY_TUNING_ID, Tunings.STANDARD_ID) ?: Tunings.STANDARD_ID
 
-    fun saveTuning(tuning: Tuning) {
-        prefs.edit().putString(KEY_TUNING_ID, tuning.id).apply()
+    fun saveTuningId(id: String) {
+        prefs.edit().putString(KEY_TUNING_ID, id).apply()
     }
 
     fun loadAutoDetect(): Boolean = prefs.getBoolean(KEY_AUTO_DETECT, true)
@@ -184,6 +182,12 @@ class TunrPreferences(private val prefs: SharedPreferences) {
 
     fun saveBpm(bpm: Int) {
         prefs.edit().putInt(KEY_BPM, bpm.coerceIn(30, 240)).apply()
+    }
+
+    fun loadSubdivision(): Int = prefs.getInt(KEY_SUBDIVISION, 1).coerceIn(1, 4)
+
+    fun saveSubdivision(subdivision: Int) {
+        prefs.edit().putInt(KEY_SUBDIVISION, subdivision.coerceIn(1, 4)).apply()
     }
 
     fun loadSignature(): TimeSignature {

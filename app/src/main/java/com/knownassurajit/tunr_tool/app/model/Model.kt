@@ -1,12 +1,7 @@
 package com.knownassurajit.tunr_tool.app.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.vector.ImageVector
 import kotlin.math.abs
-import kotlin.math.pow
 
 enum class Precision(
     val label: String,
@@ -21,16 +16,21 @@ enum class Precision(
     Ultra("Ultra", "±0.5¢", "Ultra precision", 0.5f, 2, "Luthier grade. Locks within ±0.5¢ with a 0.01¢ readout."),
 }
 
-/** Tuner response sensitivity and frequency jitter damping */
+/**
+ * Tuner response sensitivity. [smoothingFactor] is the per-analysis EMA weight at the detector's
+ * ~21.5 frames/s; [medianWindow] frames of pitch history are median-filtered first (kills octave
+ * and outlier frames at the cost of (window-1)/2 frames of lag).
+ */
 enum class TunerSensitivity(
     val label: String,
     val description: String,
     val smoothingFactor: Float,
     val deadbandCents: Float,
+    val medianWindow: Int,
 ) {
-    Smooth("Smooth", "Maximum jitter filtering & gentle dial movement. Calms fluctuating frequencies so you can easily catch up with the tuner dial.", 0.20f, 0.35f),
-    Balanced("Standard", "Balanced responsiveness and anti-jitter stabilization for everyday playing.", 0.45f, 0.20f),
-    Responsive("Fast", "Direct, instantaneous needle response with minimal damping.", 0.85f, 0.05f),
+    Smooth("Smooth", "Maximum jitter filtering & gentle dial movement. Calms fluctuating frequencies so you can easily catch up with the tuner dial.", 0.12f, 0.35f, 5),
+    Balanced("Standard", "Balanced responsiveness and anti-jitter stabilization for everyday playing.", 0.28f, 0.20f, 3),
+    Responsive("Fast", "Direct, instantaneous needle response with minimal damping.", 0.60f, 0.05f, 1),
 }
 
 /** App-wide AMOLED color schemes selectable from settings */
@@ -75,72 +75,6 @@ enum class MetronomeSound(val label: String, val description: String) {
     Clave("Clave", "Bright resonant Latin tone"),
 }
 
-/** Instrument representations with icons */
-enum class Instrument(val label: String, val icon: ImageVector) {
-    AcousticGuitar("Acoustic guitar", Icons.Rounded.MusicNote),
-    ElectricGuitar("Electric guitar", Icons.Rounded.MusicNote),
-    Bass("Bass guitar", Icons.Rounded.MusicNote),
-    Ukulele("Ukulele", Icons.Rounded.MusicNote),
-    Chromatic("Chromatic", Icons.Rounded.GraphicEq),
-}
-
-@Immutable
-data class TuningString(val number: Int, val note: String, val octave: Int, val midi: Int) {
-    /** Target frequency for the current A4 reference, so the chips follow calibration. */
-    fun hz(a4: Float): Float = (a4 * 2.0.pow((midi - 69) / 12.0)).toFloat()
-}
-
-@Immutable
-data class Tuning(
-    val id: String,
-    val name: String,
-    val instrument: Instrument,
-    val strings: List<TuningString>,
-) {
-    val notes: String get() = if (strings.isEmpty()) "All notes" else strings.joinToString(" ") { it.note }
-}
-
-private val SEMITONE = mapOf('C' to 0, 'D' to 2, 'E' to 4, 'F' to 5, 'G' to 7, 'A' to 9, 'B' to 11)
-
-private fun s(number: Int, note: String, octave: Int): TuningString {
-    val accidental = when {
-        note.endsWith("♭") -> -1
-        note.endsWith("♯") -> 1
-        else -> 0
-    }
-    return TuningString(number, note, octave, 12 * (octave + 1) + SEMITONE.getValue(note[0]) + accidental)
-}
-
-object Tunings {
-    val Standard = Tuning(
-        "standard", "Standard", Instrument.AcousticGuitar,
-        listOf(s(6, "E", 2), s(5, "A", 2), s(4, "D", 3), s(3, "G", 3), s(2, "B", 3), s(1, "E", 4)),
-    )
-    val DropD = Tuning(
-        "drop_d", "Drop D", Instrument.ElectricGuitar,
-        listOf(s(6, "D", 2), s(5, "A", 2), s(4, "D", 3), s(3, "G", 3), s(2, "B", 3), s(1, "E", 4)),
-    )
-    val Dadgad = Tuning(
-        "dadgad", "DADGAD (Celtic / Folk)", Instrument.AcousticGuitar,
-        listOf(s(6, "D", 2), s(5, "A", 2), s(4, "D", 3), s(3, "G", 3), s(2, "A", 3), s(1, "D", 4)),
-    )
-    val HalfStepDown = Tuning(
-        "half_step_down", "Half-step down", Instrument.ElectricGuitar,
-        listOf(s(6, "E♭", 2), s(5, "A♭", 2), s(4, "D♭", 3), s(3, "G♭", 3), s(2, "B♭", 3), s(1, "E♭", 4)),
-    )
-    val Bass = Tuning(
-        "bass", "Bass standard", Instrument.Bass,
-        listOf(s(4, "E", 1), s(3, "A", 1), s(2, "D", 2), s(1, "G", 2)),
-    )
-    val Ukulele = Tuning(
-        "ukulele", "Ukulele standard", Instrument.Ukulele,
-        listOf(s(4, "G", 4), s(3, "C", 4), s(2, "E", 4), s(1, "A", 4)),
-    )
-    val Chromatic = Tuning("chromatic", "Chromatic", Instrument.Chromatic, emptyList())
-
-    val All = listOf(Standard, DropD, Dadgad, HalfStepDown, Bass, Ukulele, Chromatic)
-}
-
 /** One frame from the pitch detector. [cents] is negative when flat, positive when sharp. */
 @Immutable
 data class PitchReading(
@@ -158,6 +92,8 @@ data class TunerState(
     val autoDetect: Boolean = true,
     val activeString: Int? = null,
     val tunedStrings: Set<Int> = emptySet(),
+    /** Debounced in-tune state (3 stable frames in, hysteresis out). Drives colour, haptics and sound. */
+    val locked: Boolean = false,
 )
 
 @Immutable
@@ -199,10 +135,21 @@ data class MetronomeState(
     val signature: TimeSignature = TimeSignature(4, 4),
     val playing: Boolean = false,
     val beat: Int = 0,
+    /** Increments on every heard beat so a 1-beat bar still re-triggers haptics and the flash. */
+    val beatSerial: Int = 0,
     val accents: List<BeatAccent> = listOf(BeatAccent.ACCENT, BeatAccent.NORMAL, BeatAccent.NORMAL, BeatAccent.NORMAL),
+    /** Clicks per beat: 1 = none, 2 = eighths, 3 = triplets, 4 = sixteenths. */
+    val subdivision: Int = 1,
 )
 
 enum class TuneStatus { Idle, Far, Near, InTune }
+
+fun TunerState.status(): TuneStatus = when {
+    reading == null -> TuneStatus.Idle
+    locked -> TuneStatus.InTune
+    abs(reading.cents) <= 10f -> TuneStatus.Near
+    else -> TuneStatus.Far
+}
 
 fun PitchReading?.status(lockCents: Float): TuneStatus = when {
     this == null -> TuneStatus.Idle

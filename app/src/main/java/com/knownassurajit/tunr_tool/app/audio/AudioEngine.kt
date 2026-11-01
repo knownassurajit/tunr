@@ -1,103 +1,114 @@
 package com.knownassurajit.tunr_tool.app.audio
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.Process
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+
+/** Receives mono PCM16 blocks on the audio thread. Must not allocate or block. */
+fun interface AudioSink {
+    fun onSamples(buffer: ShortArray, count: Int)
+}
 
 /**
- * Captures real-time PCM audio from the device microphone for pitch estimation.
- * 
- * STRICT PRIVACY GUARANTEE:
- * Captured audio buffers exist exclusively in volatile memory (RAM) for immediate mathematical analysis
- * and are instantly overwritten. No audio data is ever persisted to local storage, cache, or external servers.
+ * Microphone capture on a dedicated URGENT_AUDIO thread: one preallocated buffer, blocking reads,
+ * no coroutines, no per-block allocation. Prefers the UNPROCESSED source (no AGC / noise
+ * suppression distorting level and periodicity), falling back to VOICE_RECOGNITION, then MIC.
+ *
+ * STRICT PRIVACY: samples live only in that one buffer in RAM and are overwritten by the next read.
+ * Nothing is persisted, cached or transmitted.
  */
 class AudioEngine(
+    context: Context,
     private val sampleRate: Int = 44100,
-    private val bufferSize: Int = 4096
+    private val hopSamples: Int = 2048,
 ) {
-    private var audioRecord: AudioRecord? = null
-    private var recordingJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val audioManager = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
-    private val _audioBufferFlow = MutableSharedFlow<ShortArray>(extraBufferCapacity = 2)
-    val audioBufferFlow: SharedFlow<ShortArray> = _audioBufferFlow.asSharedFlow()
+    @Volatile private var running = false
+    private var thread: Thread? = null
 
-    private val minHardwareBufferSize = AudioRecord.getMinBufferSize(
-        sampleRate,
-        AudioFormat.CHANNEL_IN_MONO,
-        AudioFormat.ENCODING_PCM_16BIT
-    )
+    val isRecording: Boolean get() = running && thread?.isAlive == true
 
-    val isRecording: Boolean
-        get() = recordingJob?.isActive == true && audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING
+    @Synchronized
+    @SuppressLint("MissingPermission")
+    fun start(sink: AudioSink, onFailure: () -> Unit = {}) {
+        if (isRecording) return
+        val record = createRecord() ?: run { onFailure(); return }
+        try {
+            record.startRecording()
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "startRecording failed", e)
+            record.release()
+            onFailure()
+            return
+        }
+        running = true
+        thread = Thread({ loop(record, sink) }, "tunr-audio-in").also { it.start() }
+    }
+
+    @Synchronized
+    fun stop() {
+        running = false
+        thread?.let { t ->
+            try { t.join(250) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+        }
+        thread = null
+    }
+
+    private fun loop(record: AudioRecord, sink: AudioSink) {
+        try { Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO) } catch (_: Exception) {}
+        val buffer = ShortArray(hopSamples)
+        try {
+            while (running) {
+                val n = record.read(buffer, 0, hopSamples, AudioRecord.READ_BLOCKING)
+                if (n > 0) sink.onSamples(buffer, n) else if (n < 0) break
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "capture loop failed", e)
+        } finally {
+            running = false
+            try { record.stop() } catch (_: Exception) {}
+            record.release()
+        }
+    }
 
     @SuppressLint("MissingPermission")
-    fun start(onPermissionRequired: () -> Unit) {
-        if (isRecording) return
-
-        try {
-            val recordBufferSize = maxOf(minHardwareBufferSize * 2, bufferSize * 2)
-            val record = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                recordBufferSize
-            )
-
-            if (record.state != AudioRecord.STATE_INITIALIZED) {
-                Log.e("AudioEngine", "AudioRecord failed to initialize")
-                record.release()
-                onPermissionRequired()
-                return
-            }
-
-            audioRecord = record
-            record.startRecording()
-
-            recordingJob = scope.launch {
-                val tempBuffer = ShortArray(bufferSize)
-                while (isActive && audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                    val readSamples = record.read(tempBuffer, 0, bufferSize, AudioRecord.READ_BLOCKING)
-                    if (readSamples > 0) {
-                        val bufferCopy = tempBuffer.copyOf(readSamples)
-                        _audioBufferFlow.tryEmit(bufferCopy)
-                    }
-                }
-            }
-        } catch (e: SecurityException) {
-            Log.e("AudioEngine", "SecurityException starting audio recording", e)
-            onPermissionRequired()
-        } catch (e: Exception) {
-            Log.e("AudioEngine", "Exception starting audio recording", e)
+    private fun createRecord(): AudioRecord? {
+        val minBytes = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        if (minBytes <= 0) return null
+        val bytes = maxOf(minBytes * 2, hopSamples * 2 * 4)
+        val unprocessed = audioManager?.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) == "true"
+        val sources = buildList {
+            if (unprocessed) add(MediaRecorder.AudioSource.UNPROCESSED)
+            add(MediaRecorder.AudioSource.VOICE_RECOGNITION)
+            add(MediaRecorder.AudioSource.MIC)
         }
+        for (source in sources) {
+            try {
+                val r = AudioRecord.Builder()
+                    .setAudioSource(source)
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                            .build(),
+                    )
+                    .setBufferSizeInBytes(bytes)
+                    .build()
+                if (r.state == AudioRecord.STATE_INITIALIZED) return r
+                r.release()
+            } catch (e: Exception) {
+                Log.w(TAG, "audio source $source unavailable", e)
+            }
+        }
+        return null
     }
 
-    fun stop() {
-        recordingJob?.cancel()
-        recordingJob = null
-
-        try {
-            audioRecord?.apply {
-                if (recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                    stop()
-                }
-                release()
-            }
-        } catch (e: Exception) {
-            Log.e("AudioEngine", "Error stopping AudioRecord", e)
-        } finally {
-            audioRecord = null
-        }
-    }
+    private companion object { const val TAG = "AudioEngine" }
 }

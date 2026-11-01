@@ -49,22 +49,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.knownassurajit.tunr_tool.app.MainActivity
+import com.knownassurajit.tunr_tool.app.model.CustomString
+import com.knownassurajit.tunr_tool.app.model.CustomTuning
 import com.knownassurajit.tunr_tool.app.model.ScreenDimTimeout
 import com.knownassurajit.tunr_tool.app.model.ScreenTimeout
 import com.knownassurajit.tunr_tool.app.theme.TunrTheme
 import com.knownassurajit.tunr_tool.app.ui.components.TunrTopBar
 import com.knownassurajit.tunr_tool.app.ui.metronome.MetronomeScreen
-import com.knownassurajit.tunr_tool.app.ui.sheets.PresetsSheet
+import com.knownassurajit.tunr_tool.app.ui.sheets.CustomTuningEditor
+import com.knownassurajit.tunr_tool.app.ui.sheets.LibraryActions
+import com.knownassurajit.tunr_tool.app.ui.sheets.TuningLibrarySheet
 import com.knownassurajit.tunr_tool.app.ui.sheets.SettingsSheet
 import com.knownassurajit.tunr_tool.app.ui.tuner.TunerScreen
 import kotlinx.coroutines.delay
@@ -74,20 +80,25 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     Metronome("Metronome", Icons.Rounded.Speed),
 }
 
-private enum class TunrSheet { Presets, Settings }
+private enum class TunrSheet { Library, Editor, Settings }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TunrApp(vm: TunrViewModel = viewModel()) {
-    val tuner by vm.tuner.collectAsStateWithLifecycle()
+    // The shell only observes slow-changing projections; the 21 Hz tuner frames and per-beat metronome
+    // state are collected inside their own destination so the nav bar, top bar and sheets don't recompose.
+    val tuning by vm.activeTuning.collectAsStateWithLifecycle()
+    val hearingPitch by vm.hearingPitch.collectAsStateWithLifecycle()
+    val metronomePlaying by vm.metronomePlaying.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
-    val metronome by vm.metronome.collectAsStateWithLifecycle()
+    val library by vm.library.collectAsStateWithLifecycle()
 
     val lastDest = remember { vm.getLastDestination() }
     var destination by rememberSaveable {
         mutableStateOf(if (lastDest == "metronome") Destination.Metronome else Destination.Tuner)
     }
     var sheet by rememberSaveable { mutableStateOf<TunrSheet?>(null) }
+    var editingId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
     val activity = context as? MainActivity
@@ -116,8 +127,8 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
     }
 
     // Reset activity timer when note is voiced or metronome is playing
-    LaunchedEffect(tuner.reading != null, metronome.playing) {
-        if (tuner.reading != null || metronome.playing) {
+    LaunchedEffect(hearingPitch, metronomePlaying) {
+        if (hearingPitch || metronomePlaying) {
             onUserActivity()
         }
     }
@@ -161,13 +172,35 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
         }
     }
 
+    // Privacy + battery: never listen while the app is not on screen.
+    LifecycleResumeEffect(destination, micGranted) {
+        vm.onAppResumed(onTuner = destination == Destination.Tuner, micGranted = micGranted)
+        onPauseOrDispose { vm.onAppPaused() }
+    }
+
     // Requirement 2: Function must stop when moving between Tuner and Metronome
     LaunchedEffect(destination, micGranted) {
         val destName = if (destination == Destination.Metronome) "metronome" else "tuner"
         vm.onDestinationSelected(destName, micGranted)
     }
 
-    val wide = LocalConfiguration.current.screenWidthDp >= 600
+    val libraryActions = remember(vm) {
+        LibraryActions(
+            onSelect = vm::selectTuning,
+            onToggleFavorite = vm::toggleFavorite,
+            onNewCustom = { editingId = null; sheet = TunrSheet.Editor },
+            onEditCustom = { editingId = it; sheet = TunrSheet.Editor },
+            onDuplicateCustom = vm::duplicateCustomTuning,
+            onDeleteCustom = vm::deleteCustomTuning,
+            onMoveCustom = vm::moveCustomTuning,
+            exportJson = vm::exportCustomTunings,
+            importJson = vm::importCustomTunings,
+        )
+    }
+
+    // Window size (not display size) so split-screen, foldables and desktop windows pick the right layout.
+    val windowWidth = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+    val wide = windowWidth >= 600.dp
     TunrTheme(themeScheme = settings.themeScheme, customHex = settings.customThemeHex) {
         val motion = MaterialTheme.motionScheme
 
@@ -186,8 +219,8 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
             Scaffold(
                 topBar = {
                     TunrTopBar(
-                        tuningName = tuner.tuning.name,
-                        onPresets = { sheet = TunrSheet.Presets },
+                        tuningName = tuning.name,
+                        onPresets = { sheet = TunrSheet.Library },
                         onSettings = { sheet = TunrSheet.Settings },
                     )
                 },
@@ -246,7 +279,7 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
                     ) { target ->
                         when (target) {
                             Destination.Tuner -> TunerScreen(
-                                state = tuner,
+                                state = vm.tuner.collectAsStateWithLifecycle().value,
                                 settings = settings,
                                 micGranted = micGranted,
                                 onRequestMic = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) },
@@ -254,12 +287,13 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
                                 onSelectString = vm::selectString,
                             )
                             Destination.Metronome -> MetronomeScreen(
-                                state = metronome,
+                                state = vm.metronome.collectAsStateWithLifecycle().value,
                                 settings = settings,
                                 onBpm = vm::setBpm,
                                 onNudge = vm::nudgeBpm,
                                 onTap = { vm.tapTempo() },
                                 onSignature = vm::setSignature,
+                                onSubdivision = vm::setSubdivision,
                                 onToggleAccent = vm::toggleBeatAccent,
                                 onPlaying = vm::setPlaying,
                             )
@@ -313,11 +347,28 @@ fun TunrApp(vm: TunrViewModel = viewModel()) {
         }
 
         when (sheet) {
-            TunrSheet.Presets -> PresetsSheet(
-                selectedId = tuner.tuning.id,
-                onSelect = vm::selectTuning,
+            TunrSheet.Library -> TuningLibrarySheet(
+                library = library,
+                selectedId = tuning.id,
+                actions = libraryActions,
                 onDismiss = { sheet = null },
             )
+            TunrSheet.Editor -> {
+                val id = editingId
+                CustomTuningEditor(
+                    initial = id?.let(vm::customTuning),
+                    takenNames = vm.customNames(exceptId = id),
+                    seed = remember(tuning.id) { tuning.strings.map { CustomString(it.note, it.octave, it.centsOffset) } },
+                    a4Hz = settings.a4Hz,
+                    onSave = { name, strings ->
+                        val tuning = CustomTuning(id ?: vm.newCustomId(), name, strings)
+                        vm.saveCustomTuning(tuning)
+                        // A tuning you just created or edited is the one you want on the tuner.
+                        vm.selectTuning(tuning.toTuning())
+                    },
+                    onDismiss = { sheet = TunrSheet.Library },
+                )
+            }
             TunrSheet.Settings -> SettingsSheet(
                 settings = settings,
                 onChange = vm::updateSettings,

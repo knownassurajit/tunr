@@ -52,6 +52,16 @@ class ModelTest {
     }
 
     @Test
+    fun testTunerStateStatusUsesDebouncedLock() {
+        val reading = PitchReading("A", 2, 110f, 110f, 0.2f)
+        // inside the window but not yet locked → still "Near": no colour/haptic flicker on the first frame
+        assertEquals(TuneStatus.Near, TunerState(reading = reading, locked = false).status())
+        assertEquals(TuneStatus.InTune, TunerState(reading = reading, locked = true).status())
+        assertEquals(TuneStatus.Far, TunerState(reading = reading.copy(cents = -30f), locked = false).status())
+        assertEquals(TuneStatus.Idle, TunerState().status())
+    }
+
+    @Test
     fun testSettingsStateGranularControls() {
         val defaultSettings = SettingsState()
         assertEquals(Precision.High, defaultSettings.precision)

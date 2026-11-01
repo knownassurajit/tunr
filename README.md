@@ -11,7 +11,7 @@ docker + compose     Local CI image (JDK 17 + Android SDK 36)
 fastlane/            Play Console metadata and upload lanes
 keystore/            Local release JKS only (gitignored except README)
 store/               Play questionnaire, what's new, marketing art
-docs/                Hosted privacy policy (GitHub Pages)
+docs/                Privacy policy (GitHub Pages) + APP_STATE.md / RESEARCH.md engineering notes
 ```
 
 ## Development

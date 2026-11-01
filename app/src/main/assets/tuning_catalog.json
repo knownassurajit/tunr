@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "categories": [
+    {"id": "fretted", "name": "Fretted", "instruments": [
+      {"id": "guitar", "name": "Guitar", "variants": [
+        {"id": "acoustic", "name": "Acoustic · 6-string", "tunings": [
+          {"id": "guitar.acoustic.standard", "name": "Standard", "strings": ["E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.acoustic.half_step_down", "name": "Half-step down (E♭)", "strings": ["Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"]},
+          {"id": "guitar.acoustic.full_step_down", "name": "Full-step down (D)", "strings": ["D2", "G2", "C3", "F3", "A3", "D4"]},
+          {"id": "guitar.acoustic.step_and_half_down", "name": "Step-and-a-half down (C♯)", "strings": ["C#2", "F#2", "B2", "E3", "G#3", "C#4"]},
+          {"id": "guitar.acoustic.drop_d", "name": "Drop D", "strings": ["D2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.acoustic.drop_cs", "name": "Drop C♯", "strings": ["C#2", "G#2", "C#3", "F#3", "A#3", "D#4"]},
+          {"id": "guitar.acoustic.drop_c", "name": "Drop C", "strings": ["C2", "G2", "C3", "F3", "A3", "D4"]},
+          {"id": "guitar.acoustic.drop_b", "name": "Drop B", "strings": ["B1", "F#2", "B2", "E3", "G#3", "C#4"]},
+          {"id": "guitar.acoustic.double_drop_d", "name": "Double drop D", "strings": ["D2", "A2", "D3", "G3", "B3", "D4"]},
+          {"id": "guitar.acoustic.dadgad", "name": "DADGAD", "strings": ["D2", "A2", "D3", "G3", "A3", "D4"]},
+          {"id": "guitar.acoustic.open_g", "name": "Open G", "strings": ["D2", "G2", "D3", "G3", "B3", "D4"]},
+          {"id": "guitar.acoustic.open_d", "name": "Open D", "strings": ["D2", "A2", "D3", "F#3", "A3", "D4"]},
+          {"id": "guitar.acoustic.open_dm", "name": "Open D minor", "strings": ["D2", "A2", "D3", "F3", "A3", "D4"]},
+          {"id": "guitar.acoustic.open_e", "name": "Open E", "strings": ["E2", "B2", "E3", "G#3", "B3", "E4"]},
+          {"id": "guitar.acoustic.open_a", "name": "Open A", "strings": ["E2", "A2", "E3", "A3", "C#4", "E4"]},
+          {"id": "guitar.acoustic.open_c", "name": "Open C", "strings": ["C2", "G2", "C3", "G3", "C4", "E4"]},
+          {"id": "guitar.acoustic.nashville", "name": "Nashville (high-strung)", "strings": ["E3", "A3", "D4", "G4", "B3", "E4"]},
+          {"id": "guitar.acoustic.all_fourths", "name": "All fourths (EADGCF)", "strings": ["E2", "A2", "D3", "G3", "C4", "F4"]},
+          {"id": "guitar.acoustic.new_standard", "name": "New Standard (CGDAEG)", "strings": ["C2", "G2", "D3", "A3", "E4", "G4"]}
+        ]},
+        {"id": "classical", "name": "Classical · nylon", "tunings": [
+          {"id": "guitar.classical.standard", "name": "Standard", "strings": ["E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.classical.half_step_down", "name": "Half-step down (E♭)", "strings": ["Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"]},
+          {"id": "guitar.classical.full_step_down", "name": "Full-step down (D)", "strings": ["D2", "G2", "C3", "F3", "A3", "D4"]},
+          {"id": "guitar.classical.drop_d", "name": "Drop D", "strings": ["D2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.classical.dadgad", "name": "DADGAD", "strings": ["D2", "A2", "D3", "G3", "A3", "D4"]}
+        ]},
+        {"id": "electric6", "name": "Electric · 6-string", "tunings": [
+          {"id": "guitar.electric6.standard", "name": "Standard", "strings": ["E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.electric6.half_step_down", "name": "Half-step down (E♭)", "strings": ["Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"]},
+          {"id": "guitar.electric6.full_step_down", "name": "Full-step down (D)", "strings": ["D2", "G2", "C3", "F3", "A3", "D4"]},
+          {"id": "guitar.electric6.step_and_half_down", "name": "Step-and-a-half down (C♯)", "strings": ["C#2", "F#2", "B2", "E3", "G#3", "C#4"]},
+          {"id": "guitar.electric6.drop_d", "name": "Drop D", "strings": ["D2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.electric6.drop_cs", "name": "Drop C♯", "strings": ["C#2", "G#2", "C#3", "F#3", "A#3", "D#4"]},
+          {"id": "guitar.electric6.drop_c", "name": "Drop C", "strings": ["C2", "G2", "C3", "F3", "A3", "D4"]},
+          {"id": "guitar.electric6.drop_b", "name": "Drop B", "strings": ["B1", "F#2", "B2", "E3", "G#3", "C#4"]},
+          {"id": "guitar.electric6.double_drop_d", "name": "Double drop D", "strings": ["D2", "A2", "D3", "G3", "B3", "D4"]},
+          {"id": "guitar.electric6.dadgad", "name": "DADGAD", "strings": ["D2", "A2", "D3", "G3", "A3", "D4"]},
+          {"id": "guitar.electric6.open_g", "name": "Open G", "strings": ["D2", "G2", "D3", "G3", "B3", "D4"]},
+          {"id": "guitar.electric6.open_d", "name": "Open D", "strings": ["D2", "A2", "D3", "F#3", "A3", "D4"]},
+          {"id": "guitar.electric6.open_dm", "name": "Open D minor", "strings": ["D2", "A2", "D3", "F3", "A3", "D4"]},
+          {"id": "guitar.electric6.open_e", "name": "Open E", "strings": ["E2", "B2", "E3", "G#3", "B3", "E4"]},
+          {"id": "guitar.electric6.open_a", "name": "Open A", "strings": ["E2", "A2", "E3", "A3", "C#4", "E4"]},
+          {"id": "guitar.electric6.open_c", "name": "Open C", "strings": ["C2", "G2", "C3", "G3", "C4", "E4"]},
+          {"id": "guitar.electric6.nashville", "name": "Nashville (high-strung)", "strings": ["E3", "A3", "D4", "G4", "B3", "E4"]},
+          {"id": "guitar.electric6.all_fourths", "name": "All fourths (EADGCF)", "strings": ["E2", "A2", "D3", "G3", "C4", "F4"]},
+          {"id": "guitar.electric6.new_standard", "name": "New Standard (CGDAEG)", "strings": ["C2", "G2", "D3", "A3", "E4", "G4"]},
+          {"id": "guitar.electric6.baritone", "name": "Baritone (B–B)", "strings": ["B1", "E2", "A2", "D3", "F#3", "B3"]}
+        ]},
+        {"id": "electric7", "name": "Electric · 7-string", "tunings": [
+          {"id": "guitar.electric7.standard", "name": "Standard (B)", "strings": ["B1", "E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.electric7.drop_a", "name": "Drop A", "strings": ["A1", "E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.electric7.half_step_down", "name": "Half-step down", "strings": ["Bb1", "Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"]},
+          {"id": "guitar.electric7.full_step_down", "name": "Full-step down", "strings": ["A1", "D2", "G2", "C3", "F3", "A3", "D4"]}
+        ]},
+        {"id": "electric8", "name": "Electric · 8-string", "tunings": [
+          {"id": "guitar.electric8.standard", "name": "Standard (F♯)", "strings": ["F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.electric8.drop_e", "name": "Drop E", "strings": ["E1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"]},
+          {"id": "guitar.electric8.half_step_down", "name": "Half-step down", "strings": ["F1", "Bb1", "Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"]}
+        ]},
+        {"id": "twelve", "name": "12-string", "note": "Unison courses (the two B and two E strings) are listed once; octave pairs are listed separately.", "tunings": [
+          {"id": "guitar.twelve.standard", "name": "Standard", "strings": ["E2", "E3", "A2", "A3", "D3", "D4", "G3", "G4", "B3", "E4"]},
+          {"id": "guitar.twelve.half_step_down", "name": "Half-step down", "strings": ["Eb2", "Eb3", "Ab2", "Ab3", "Db3", "Db4", "Gb3", "Gb4", "Bb3", "Eb4"]},
+          {"id": "guitar.twelve.full_step_down", "name": "Full-step down", "strings": ["D2", "D3", "G2", "G3", "C3", "C4", "F3", "F4", "A3", "D4"]},
+          {"id": "guitar.twelve.drop_d", "name": "Drop D", "strings": ["D2", "D3", "A2", "A3", "D3", "D4", "G3", "G4", "B3", "E4"]}
+        ]}
+      ]},
+      {"id": "bass", "name": "Bass", "variants": [
+        {"id": "bass4", "name": "4-string", "tunings": [
+          {"id": "bass.bass4.standard", "name": "Standard (EADG)", "strings": ["E1", "A1", "D2", "G2"]},
+          {"id": "bass.bass4.drop_d", "name": "Drop D", "strings": ["D1", "A1", "D2", "G2"]},
+          {"id": "bass.bass4.d_standard", "name": "D standard (DGCF)", "strings": ["D1", "G1", "C2", "F2"]},
+          {"id": "bass.bass4.drop_c", "name": "Drop C", "strings": ["C1", "G1", "C2", "F2"]},
+          {"id": "bass.bass4.half_step_down", "name": "Half-step down", "strings": ["Eb1", "Ab1", "Db2", "Gb2"]},
+          {"id": "bass.bass4.piccolo", "name": "Piccolo (octave up)", "strings": ["E2", "A2", "D3", "G3"]}
+        ]},
+        {"id": "bass5", "name": "5-string", "tunings": [
+          {"id": "bass.bass5.standard", "name": "Standard (BEADG)", "strings": ["B0", "E1", "A1", "D2", "G2"]},
+          {"id": "bass.bass5.high_c", "name": "High C (EADGC)", "strings": ["E1", "A1", "D2", "G2", "C3"]},
+          {"id": "bass.bass5.drop_a", "name": "Drop A", "strings": ["A0", "E1", "A1", "D2", "G2"]},
+          {"id": "bass.bass5.half_step_down", "name": "Half-step down", "strings": ["Bb0", "Eb1", "Ab1", "Db2", "Gb2"]}
+        ]},
+        {"id": "bass6", "name": "6-string", "tunings": [
+          {"id": "bass.bass6.standard", "name": "Standard (BEADGC)", "strings": ["B0", "E1", "A1", "D2", "G2", "C3"]},
+          {"id": "bass.bass6.half_step_down", "name": "Half-step down", "strings": ["Bb0", "Eb1", "Ab1", "Db2", "Gb2", "B2"]}
+        ]}
+      ]},
+      {"id": "ukulele", "name": "Ukulele", "variants": [
+        {"id": "soprano", "name": "Soprano", "tunings": [
+          {"id": "ukulele.soprano.standard", "name": "Standard (GCEA)", "strings": ["G4", "C4", "E4", "A4"]},
+          {"id": "ukulele.soprano.d_tuning", "name": "D tuning (ADF♯B)", "strings": ["A4", "D4", "F#4", "B4"]}
+        ]},
+        {"id": "concert", "name": "Concert", "tunings": [
+          {"id": "ukulele.concert.standard", "name": "Standard (GCEA)", "strings": ["G4", "C4", "E4", "A4"]},
+          {"id": "ukulele.concert.low_g", "name": "Low G", "strings": ["G3", "C4", "E4", "A4"]},
+          {"id": "ukulele.concert.d_tuning", "name": "D tuning (ADF♯B)", "strings": ["A4", "D4", "F#4", "B4"]}
+        ]},
+        {"id": "tenor", "name": "Tenor", "tunings": [
+          {"id": "ukulele.tenor.standard", "name": "Standard (GCEA)", "strings": ["G4", "C4", "E4", "A4"]},
+          {"id": "ukulele.tenor.low_g", "name": "Low G", "strings": ["G3", "C4", "E4", "A4"]}
+        ]},
+        {"id": "baritone", "name": "Baritone", "tunings": [
+          {"id": "ukulele.baritone.standard", "name": "Standard (DGBE)", "strings": ["D3", "G3", "B3", "E4"]}
+        ]}
+      ]},
+      {"id": "mandolin", "name": "Mandolin family", "variants": [
+        {"id": "mandolin", "name": "Mandolin", "note": "Paired courses are listed once.", "tunings": [
+          {"id": "mandolin.mandolin.standard", "name": "Standard (GDAE)", "strings": ["G3", "D4", "A4", "E5"]}
+        ]},
+        {"id": "mandola", "name": "Mandola", "tunings": [
+          {"id": "mandolin.mandola.standard", "name": "Standard (CGDA)", "strings": ["C3", "G3", "D4", "A4"]}
+        ]},
+        {"id": "octave", "name": "Octave mandolin", "tunings": [
+          {"id": "mandolin.octave.standard", "name": "Standard (GDAE)", "strings": ["G2", "D3", "A3", "E4"]}
+        ]},
+        {"id": "mandocello", "name": "Mandocello", "tunings": [
+          {"id": "mandolin.mandocello.standard", "name": "Standard (CGDA)", "strings": ["C2", "G2", "D3", "A3"]}
+        ]}
+      ]},
+      {"id": "banjo", "name": "Banjo", "variants": [
+        {"id": "banjo5", "name": "5-string", "tunings": [
+          {"id": "banjo.banjo5.open_g", "name": "Open G (gDGBD)", "strings": ["G4", "D3", "G3", "B3", "D4"]},
+          {"id": "banjo.banjo5.double_c", "name": "Double C (gCGCD)", "strings": ["G4", "C3", "G3", "C4", "D4"]},
+          {"id": "banjo.banjo5.sawmill", "name": "Sawmill / mountain minor (gDGCD)", "strings": ["G4", "D3", "G3", "C4", "D4"]},
+          {"id": "banjo.banjo5.open_d", "name": "Open D (f♯DF♯AD)", "strings": ["F#4", "D3", "F#3", "A3", "D4"]}
+        ]},
+        {"id": "tenor4", "name": "Tenor · 4-string", "tunings": [
+          {"id": "banjo.tenor4.standard", "name": "Standard (CGDA)", "strings": ["C3", "G3", "D4", "A4"]},
+          {"id": "banjo.tenor4.irish", "name": "Irish (GDAE)", "strings": ["G2", "D3", "A3", "E4"]}
+        ]},
+        {"id": "plectrum", "name": "Plectrum", "tunings": [
+          {"id": "banjo.plectrum.standard", "name": "Standard (CGBD)", "strings": ["C3", "G3", "B3", "D4"]}
+        ]}
+      ]},
+      {"id": "world", "name": "Other fretted", "variants": [
+        {"id": "bouzouki_gr", "name": "Bouzouki · Greek", "tunings": [
+          {"id": "world.bouzouki_gr.tetrachordo", "name": "Tetrachordo (CFAD)", "strings": ["C3", "F3", "A3", "D4"]},
+          {"id": "world.bouzouki_gr.trichordo", "name": "Trichordo (DAD)", "strings": ["D3", "A3", "D4"]}
+        ]},
+        {"id": "bouzouki_ie", "name": "Bouzouki · Irish", "tunings": [
+          {"id": "world.bouzouki_ie.gdad", "name": "GDAD", "strings": ["G2", "D3", "A3", "D4"]},
+          {"id": "world.bouzouki_ie.gdae", "name": "GDAE", "strings": ["G2", "D3", "A3", "E4"]}
+        ]},
+        {"id": "cavaquinho", "name": "Cavaquinho", "tunings": [
+          {"id": "world.cavaquinho.standard", "name": "Standard (DGBD)", "strings": ["D4", "G4", "B4", "D5"]}
+        ]},
+        {"id": "balalaika", "name": "Balalaika · prima", "note": "The two unison E strings are listed once.", "tunings": [
+          {"id": "world.balalaika.standard", "name": "Standard (EA)", "strings": ["E4", "A4"]}
+        ]}
+      ]}
+    ]},
+    {"id": "bowed", "name": "Bowed", "instruments": [
+      {"id": "violin", "name": "Violin", "variants": [
+        {"id": "violin", "name": "4-string", "tunings": [
+          {"id": "violin.violin.standard", "name": "Standard (GDAE)", "strings": ["G3", "D4", "A4", "E5"]}
+        ]},
+        {"id": "violin5", "name": "5-string", "tunings": [
+          {"id": "violin.violin5.standard", "name": "Standard (CGDAE)", "strings": ["C3", "G3", "D4", "A4", "E5"]}
+        ]}
+      ]},
+      {"id": "viola", "name": "Viola", "variants": [
+        {"id": "viola", "name": "Standard", "tunings": [
+          {"id": "viola.viola.standard", "name": "Standard (CGDA)", "strings": ["C3", "G3", "D4", "A4"]}
+        ]}
+      ]},
+      {"id": "cello", "name": "Cello", "variants": [
+        {"id": "cello", "name": "4-string", "tunings": [
+          {"id": "cello.cello.standard", "name": "Standard (CGDA)", "strings": ["C2", "G2", "D3", "A3"]},
+          {"id": "cello.cello.bach_suite_5", "name": "Bach Suite No. 5 scordatura (CGDG)", "strings": ["C2", "G2", "D3", "G3"]}
+        ]},
+        {"id": "cello5", "name": "5-string", "tunings": [
+          {"id": "cello.cello5.standard", "name": "Standard (CGDAE)", "strings": ["C2", "G2", "D3", "A3", "E4"]}
+        ]}
+      ]},
+      {"id": "double_bass", "name": "Double bass", "variants": [
+        {"id": "bass4", "name": "4-string", "tunings": [
+          {"id": "double_bass.bass4.standard", "name": "Orchestral (EADG)", "strings": ["E1", "A1", "D2", "G2"]},
+          {"id": "double_bass.bass4.solo", "name": "Solo (F♯BEA)", "strings": ["F#1", "B1", "E2", "A2"]}
+        ]},
+        {"id": "bass5", "name": "5-string", "tunings": [
+          {"id": "double_bass.bass5.low_b", "name": "Low B (BEADG)", "strings": ["B0", "E1", "A1", "D2", "G2"]},
+          {"id": "double_bass.bass5.high_c", "name": "High C (EADGC)", "strings": ["E1", "A1", "D2", "G2", "C3"]}
+        ]}
+      ]}
+    ]},
+    {"id": "chromatic", "name": "Chromatic", "instruments": [
+      {"id": "chromatic", "name": "Chromatic", "variants": [
+        {"id": "chromatic", "name": "All 12 tones", "tunings": [
+          {"id": "chromatic", "name": "Chromatic (any note)", "strings": []}
+        ]}
+      ]}
+    ]}
+  ]
+}

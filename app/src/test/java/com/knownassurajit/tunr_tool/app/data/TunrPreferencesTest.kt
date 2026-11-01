@@ -103,17 +103,24 @@ class TunrPreferencesTest {
     }
 
     @Test
-    fun testTuningPresetPersistence() {
-        // Defaults to Standard
-        assertEquals(Tunings.Standard.id, preferences.loadTuning().id)
+    fun testTuningIdPersistence() {
+        assertEquals(Tunings.STANDARD_ID, preferences.loadTuningId())
 
-        // Select Drop D
-        preferences.saveTuning(Tunings.DropD)
-        assertEquals(Tunings.DropD.id, preferences.loadTuning().id)
+        preferences.saveTuningId("guitar.electric6.drop_d")
+        assertEquals("guitar.electric6.drop_d", preferences.loadTuningId())
 
-        // Select Ukulele
-        preferences.saveTuning(Tunings.Ukulele)
-        assertEquals(Tunings.Ukulele.id, preferences.loadTuning().id)
+        // custom tunings are stored by id too and resolved once the library has loaded
+        preferences.saveTuningId("custom.1a2b3c4d")
+        assertEquals("custom.1a2b3c4d", preferences.loadTuningId())
+    }
+
+    @Test
+    fun testSubdivisionPersistence() {
+        assertEquals(1, preferences.loadSubdivision())
+        preferences.saveSubdivision(3)
+        assertEquals(3, preferences.loadSubdivision())
+        preferences.saveSubdivision(99)
+        assertEquals(4, preferences.loadSubdivision())
     }
 
     @Test

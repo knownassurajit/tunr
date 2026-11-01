@@ -3,6 +3,7 @@ package com.knownassurajit.tunr_tool.app.ui.tuner
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,10 +51,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -72,6 +76,8 @@ import com.knownassurajit.tunr_tool.app.model.TuneStatus
 import com.knownassurajit.tunr_tool.app.model.TunerState
 import com.knownassurajit.tunr_tool.app.model.TuningString
 import com.knownassurajit.tunr_tool.app.model.status
+import com.knownassurajit.tunr_tool.app.theme.LocalReducedMotion
+import com.knownassurajit.tunr_tool.app.theme.TunrMotion
 import com.knownassurajit.tunr_tool.app.theme.tabular
 import com.knownassurajit.tunr_tool.app.ui.components.toComposePath
 import kotlin.math.abs
@@ -86,7 +92,7 @@ fun TunerScreen(
     onSelectString: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val status = state.reading.status(settings.precision.lockCents)
+    val status = state.status()
     val haptics = LocalHapticFeedback.current
     val soundPlayer = remember { com.knownassurajit.tunr_tool.app.audio.InTuneSoundPlayer() }
 
@@ -156,7 +162,7 @@ private fun TunerHero(
     dialSize: Dp,
 ) {
     val reading = state.reading
-    val status = reading.status(settings.precision.lockCents)
+    val status = state.status()
     val fallbackTarget = state.tuning.strings
         .firstOrNull { it.number == state.activeString }?.hz(settings.a4Hz)
 
@@ -189,6 +195,7 @@ private fun TunerHero(
 private fun TuningDial(reading: PitchReading?, status: TuneStatus, chromatic: Boolean, dialSize: Dp) {
     val scheme = MaterialTheme.colorScheme
     val motion = MaterialTheme.motionScheme
+    val reduced = LocalReducedMotion.current
 
     val (container, content) = when (status) {
         TuneStatus.Idle -> scheme.surfaceContainerHigh to scheme.onSurfaceVariant
@@ -205,18 +212,35 @@ private fun TuningDial(reading: PitchReading?, status: TuneStatus, chromatic: Bo
     val morph = remember { Morph(MaterialShapes.Cookie9Sided, MaterialShapes.Circle) }
     val morphProgress by animateFloatAsState(
         if (status == TuneStatus.InTune) 1f else 0f,
-        animationSpec = motion.defaultSpatialSpec(), label = "dialMorph",
+        animationSpec = if (reduced) snap() else motion.defaultSpatialSpec(), label = "dialMorph",
     )
     // +/-50 cents turns the cookie by one lobe (40 degrees)
     val rotation by animateFloatAsState(
         ((reading?.cents ?: 0f).coerceIn(-50f, 50f) / 50f) * 40f,
-        animationSpec = motion.fastSpatialSpec(), label = "dialRotation",
+        animationSpec = TunrMotion.dialRotation(reduced), label = "dialRotation",
     )
+    // The dial is already "large text": pin it to a physical size so 200% font scale cannot overflow the shape.
+    val noteSize = with(LocalDensity.current) { (if (dialSize < 200.dp) 56.dp else 68.dp).toSp() }
+    val noteLine = with(LocalDensity.current) { (if (dialSize < 200.dp) 60.dp else 72.dp).toSp() }
+    val spoken = remember(reading?.note, reading?.octave, status, reading?.cents?.let { (it / 5f).toInt() }) {
+        when {
+            reading == null -> if (chromatic) "Play a note" else "Pluck a string"
+            else -> "${reading.note}${reading.octave}, " + when (status) {
+                TuneStatus.InTune -> "in tune"
+                else -> "%d cents %s, tune %s".format(
+                    abs(reading.cents).toInt(),
+                    if (reading.cents < 0f) "flat" else "sharp",
+                    if (reading.cents < 0f) "up" else "down",
+                )
+            }
+        }
+    }
 
     Box(
         Modifier
             .size(dialSize)
             .aspectRatio(1f)
+            .semantics(mergeDescendants = true) { contentDescription = spoken }
             .drawBehind {
                 rotate(rotation, center) {
                     drawPath(morph.toComposePath(morphProgress, size), containerColor)
@@ -236,10 +260,7 @@ private fun TuningDial(reading: PitchReading?, status: TuneStatus, chromatic: Bo
                 Text(
                     noteLabel(reading.note, reading.octave),
                     style = MaterialTheme.typography.displayLargeEmphasized
-                        .copy(
-                            fontSize = if (dialSize < 200.dp) 56.sp else 68.sp,
-                            lineHeight = if (dialSize < 200.dp) 60.sp else 72.sp,
-                        ),
+                        .copy(fontSize = noteSize, lineHeight = noteLine),
                     color = contentColor,
                 )
                 Row(
@@ -278,10 +299,11 @@ private fun TuningDial(reading: PitchReading?, status: TuneStatus, chromatic: Bo
 private fun CentsMeter(cents: Float?, lockCents: Float) {
     val scheme = MaterialTheme.colorScheme
     val motion = MaterialTheme.motionScheme
+    val reduced = LocalReducedMotion.current
 
     val needle by animateFloatAsState(
         (cents ?: 0f).coerceIn(-50f, 50f),
-        animationSpec = motion.fastSpatialSpec(), label = "needle",
+        animationSpec = TunrMotion.needle(reduced), label = "needle",
     )
     val needleColor by animateColorAsState(
         when {
@@ -297,7 +319,14 @@ private fun CentsMeter(cents: Float?, lockCents: Float) {
         Modifier
             .fillMaxWidth()
             .height(36.dp)
-            .clearAndSetSemantics { }
+            .clearAndSetSemantics {
+                // Explorable by touch, but not a live region: updating 20x/s would flood TalkBack.
+                stateDescription = when {
+                    cents == null -> "No signal"
+                    abs(cents) <= lockCents -> "In tune"
+                    else -> "%d cents %s".format(abs(cents).toInt(), if (cents < 0f) "flat" else "sharp")
+                }
+            }
             .drawBehind {
                 val pad = 6.dp.toPx()
                 val usable = size.width - 2 * pad
@@ -405,7 +434,13 @@ private fun StringsSection(
             )
         }
 
-        val cols = if (strings.size % 3 == 0) 3 else 2
+        val count = strings.size
+        val cols = when {
+            count <= 3 -> count
+            count == 4 -> 2
+            count == 5 || count % 3 == 0 -> 3
+            else -> 4
+        }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             strings.chunked(cols).forEach { rowStrings ->
                 Row(

@@ -7,6 +7,8 @@ import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
@@ -369,11 +371,15 @@ fun TunrTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = themeScheme.toColorScheme(customHex)
-    MaterialExpressiveTheme(
-        colorScheme = colors,
-        motionScheme = MotionScheme.expressive(),
-        content = content,
-    )
+    val reducedMotion by rememberReducedMotion()
+    CompositionLocalProvider(LocalReducedMotion provides reducedMotion) {
+        MaterialExpressiveTheme(
+            colorScheme = colors,
+            motionScheme = MotionScheme.expressive(),
+            shapes = TunrShapes,
+            content = content,
+        )
+    }
 }
 
 /** Fixed-width digits so live readouts (Hz, cents, BPM) never jitter sideways. */
