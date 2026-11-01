@@ -1,15 +1,60 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+gradle/gradle-daemon-jvm.properties
+
+# Local configuration
 local.properties
+keystore.properties
+.env
+.env.*
+!.env.example
+
+# Signing material
+*.jks
+*.keystore
+*.p12
+*.pem
+google-play-service-account.json
+play-service-account.json
+**/secrets/
+
+# Android / Studio
+*.iml
+.idea/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+*.apk
+*.aab
+!play_store_assets/bundle/tunr-v1.0-release.aab
+*.ap_
+*.apks
+output-metadata.json
+app/release/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.cursor/
+*.swp
+*~
+
+# Reference / scratch (never ship)
+files.zip
+ref_files/
+play_store_assets/bundle/*
+!play_store_assets/bundle/tunr-v1.0-release.aab
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+vendor/bundle/
+
+# Docker
+docker/.cache/

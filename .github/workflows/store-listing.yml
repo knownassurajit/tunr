@@ -1,0 +1,33 @@
+name: Play store listing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  listing:
+    name: Sync listing
+    runs-on: ubuntu-latest
+    environment: internal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Write Play API credentials
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$PLAY_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > play-service-account.json
+
+      - name: Upload metadata only
+        run: bundle exec fastlane android listing
+        env:
+          SUPPLY_JSON_KEY: play-service-account.json
+
+      - name: Wipe credentials
+        if: always()
+        run: rm -f play-service-account.json

@@ -1,0 +1,34 @@
+services:
+  ci:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    user: "1000:1000"
+    volumes:
+      - .:/workspace
+      - gradle-cache:/home/tunr/.gradle
+    environment:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+    command: ["./gradlew", "--no-daemon", "testDebugUnitTest", "assembleDebug"]
+
+  release:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    user: "1000:1000"
+    volumes:
+      - .:/workspace
+      - gradle-cache:/home/tunr/.gradle
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+    command: ["./gradlew", "--no-daemon", "bundleRelease"]
+
+volumes:
+  gradle-cache:

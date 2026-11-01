@@ -1,8 +1,18 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
 }
+
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.isFile) file.inputStream().use(::load)
+}
+
+fun secret(name: String): String? =
+    System.getenv(name)?.takeIf { it.isNotBlank() } ?: keystoreProperties.getProperty(name)?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.knownassurajit.tunr_tool.app"
@@ -11,12 +21,29 @@ android {
         applicationId = "com.knownassurajit.tunr_tool.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = secret("TUNR_VERSION_CODE")?.toIntOrNull() ?: 1
+        versionName = secret("TUNR_VERSION_NAME") ?: "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = secret("TUNR_KEYSTORE_FILE")
+            if (storePath != null) {
+                storeFile = rootProject.file(storePath)
+                storePassword = secret("TUNR_KEYSTORE_PASSWORD")
+                keyAlias = secret("TUNR_KEY_ALIAS")
+                keyPassword = secret("TUNR_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            val releaseStore = signingConfigs.getByName("release").storeFile
+            if (releaseStore != null && releaseStore.isFile) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -43,6 +70,12 @@ kotlin {
     jvmToolchain(17)
 }
 
+tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+    enabled = false
+}
+
+
+
 dependencies {
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
@@ -62,6 +95,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material.icons.extended)
+  implementation(libs.androidx.graphics.shapes)
   // Tooling
   debugImplementation(libs.androidx.compose.ui.tooling)
   // Instrumented tests

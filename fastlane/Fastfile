@@ -1,0 +1,47 @@
+default_platform(:android)
+
+platform :android do
+  desc "Unit tests and debug APK"
+  lane :ci do
+    gradle(task: "testDebugUnitTest lintDebug assembleDebug")
+  end
+
+  desc "Signed release bundle (requires keystore env)"
+  lane :bundle do
+    gradle(task: "bundleRelease")
+  end
+
+  desc "Upload store listing metadata only"
+  lane :listing do
+    upload_to_play_store(
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_changelogs: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      sync_image_upload: true,
+      changes_not_sent_for_review: true
+    )
+  end
+
+  desc "Development track: internal testing"
+  lane :internal do
+    gradle(task: "bundleRelease")
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      release_status: "completed",
+      changes_not_sent_for_review: true
+    )
+  end
+
+  desc "Production track"
+  lane :production do
+    gradle(task: "bundleRelease")
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      release_status: "completed"
+    )
+  end
+end

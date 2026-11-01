@@ -1,7 +1,7 @@
 # Privacy Policy for Tunr
 
 **Effective Date:** October 20, 2026  
-**Last Updated:** October 20, 2026  
+**Last Updated:** October 21, 2026  
 **Application:** Tunr (`com.knownassurajit.tunr_tool.app`)  
 **Developer:** Surajit (@knownassurajit)
 
@@ -51,5 +51,6 @@ If any future update modifies how features operate, this document will be update
 
 ### 7. Contact Us
 If you have any questions or concerns regarding this Privacy Policy, please open an issue or reach out via:
+* **Hosted policy (Play Console URL):** [https://knownassurajit.github.io/tunr/](https://knownassurajit.github.io/tunr/)
 * **GitHub Repository:** [https://github.com/knownassurajit/tunr](https://github.com/knownassurajit/tunr)
 * **Developer:** Surajit (@knownassurajit)

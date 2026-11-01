@@ -1,0 +1,42 @@
+Tunr is a focused, distraction-free instrument tuner and metronome built entirely with modern Jetpack Compose and Material 3 Expressive. Engineered for acoustic guitars, electric guitars, bass, ukuleles, and chromatic instruments, Tunr pairs sub-cent pitch detection with a pure AMOLED matte aesthetic.
+
+KEY FEATURES
+
+• Sub-Cent MPM Precision
+Powered by the McLeod Pitch Method (MPM) with Normalized Square Difference Function (NSDF) analysis. Tunr delivers instantaneous pitch detection with sub-millihertz frequency accuracy and zero octave jumping.
+
+• Dual-Precision Tuning Modes
+Switch effortlessly between Standard Mode (±3¢ threshold for fast onstage tuning) and High-Precision Mode (±1¢ threshold with 0.1¢ granular telemetry for studio-grade intonation setup).
+
+• Integrated Tactile Metronome
+Practice with a high-accuracy, zero-latency synthesized audio metronome. Features 30 to 280 BPM range, standard time signatures (2/4, 3/4, 4/4, 6/8), tap-tempo, rhythmic subdivisions, and synchronized visual beat indicators.
+
+• Curated Instrument Tunings & Silhouettes
+Includes bespoke, Pinterest-inspired vector silhouettes and preset tunings:
+- Acoustic Guitar (Standard, Drop D, DADGAD, Open D)
+- Electric Guitar (Standard, Drop C, Half Step Down)
+- Bass Guitar (4-String Standard, 5-String Standard, Drop D)
+- Ukulele (Standard Soprano/Concert/Tenor GCEA, Baritone DGBE)
+- Full Chromatic Mode (C0 to B8 auto-detection)
+
+• Pitch Reference Calibration
+Calibrate concert pitch A4 continuously from 432 Hz to 446 Hz (default standard 440 Hz).
+
+• Pure AMOLED Matte UI
+Designed specifically for OLED and AMOLED displays with a true-black (#060709) background, subtle monochromatic slate tones, and gentle emerald & sky-blue in-tune visual cues that eliminate battery drain and stage glare.
+
+• In-Tune Haptic Clicks
+Subtle haptic pulses notify you when your instrument hits exact pitch without needing to stare at the screen.
+
+STRICT PRIVACY PLEDGE
+Tunr is built with a zero-compromise privacy architecture:
+• 100% Offline: Tunr does not request internet access (android.permission.INTERNET is omitted).
+• Pure RAM Audio Processing: Microphone audio buffers are analyzed exclusively in volatile RAM and immediately discarded.
+• Zero Recordings: Audio is NEVER recorded, saved to disk, or sent to external servers.
+• Zero Trackers: No ads, no analytics SDKs, and no account requirements.
+
+Permissions Used:
+• RECORD_AUDIO: Required exclusively for live microphone pitch detection.
+• VIBRATE: Required for in-tune and metronome tactile pulses.
+
+Tune cleanly. Play in time. Without clutter.

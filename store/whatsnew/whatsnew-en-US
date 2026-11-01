@@ -1,0 +1,6 @@
+Initial release of Tunr v1.0.
+- McLeod Pitch Method (MPM) sub-cent precision tuning engine
+- High-Precision mode (±1¢) and Standard mode (±3¢)
+- AMOLED true-black minimalist interface with custom instrument silhouettes
+- Integrated zero-latency synthesized metronome
+- 100% offline, zero audio recording storage
