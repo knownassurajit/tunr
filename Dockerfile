@@ -1,6 +1,6 @@
 # Reproducible Android CI image for local and pipeline builds.
 # Usage: docker compose run --rm ci
-FROM eclipse-temurin:17.0.16_8-jdk-jammy AS sdk
+FROM eclipse-temurin:22.0.2_9-jdk-jammy AS sdk
 
 ARG ANDROID_SDK_TOOLS_VERSION=13114758
 ARG ANDROID_COMPILE_SDK=36
@@ -27,7 +27,7 @@ RUN yes | sdkmanager --licenses >/dev/null \
       "platforms;android-${ANDROID_COMPILE_SDK}" \
       "build-tools;${ANDROID_BUILD_TOOLS}"
 
-FROM eclipse-temurin:17.0.16_8-jdk-jammy AS ci
+FROM eclipse-temurin:22.0.2_9-jdk-jammy AS ci
 
 ENV ANDROID_HOME=/opt/android-sdk \
     ANDROID_SDK_ROOT=/opt/android-sdk \
