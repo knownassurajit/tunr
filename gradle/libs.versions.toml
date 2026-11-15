@@ -13,7 +13,7 @@ junit = "4.13.2"
 kotlin = "2.4.21"
 nav3Core = "1.0.1"
 lifecycleViewmodelNav3 = "2.10.0"
-serializationJson = "1.12.0"
+serializationJson = "1.13.0"
 datastore = "1.3.0"
 profileinstaller = "1.4.1"
 
